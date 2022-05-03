@@ -11,8 +11,8 @@ from db.data import insert_dict
 
 data_dir = 'C:/Phoenix Data/'
 
-def read_csv_as_dict_list(file_path: Path):
 
+def read_csv_as_dict_list(file_path: Path):
     data = []
     with open(file_path) as file:
         reader = csv.DictReader(file)
@@ -20,6 +20,7 @@ def read_csv_as_dict_list(file_path: Path):
             data.append(row)
 
     return data
+
 
 f_path = Path(data_dir, 'test', '시도_성_연령_각세_별_사망자수_2019.csv')
 data = read_csv_as_dict_list(f_path)
