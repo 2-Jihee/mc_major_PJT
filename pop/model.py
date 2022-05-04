@@ -1,14 +1,114 @@
 import pandas as pd
 import numpy as np
 
-
 div_name_to_div_num = {'서울': 1100000000,
                        '서울시': 1100000000,
                        '서울특별시': 1100000000,
                        }
-
-div_num_to_div_name = {1100000000: '서울특별시',
-                       }
+div_num_to_div_name = {1100000000: '서울특별시'}
+seoul_2020_12 = {
+    0: {'M': 23202, 'F': 21961},
+    1: {'M': 26272, 'F': 24204},
+    2: {'M': 27551, 'F': 25534},
+    3: {'M': 29263, 'F': 28038},
+    4: {'M': 32873, 'F': 31472},
+    5: {'M': 35231, 'F': 33514},
+    6: {'M': 34745, 'F': 33231},
+    7: {'M': 35008, 'F': 33122},
+    8: {'M': 38624, 'F': 36629},
+    9: {'M': 37118, 'F': 35374},
+    10: {'M': 37722, 'F': 35815},
+    11: {'M': 35728, 'F': 34110},
+    12: {'M': 38475, 'F': 36260},
+    13: {'M': 40704, 'F': 38472},
+    14: {'M': 37778, 'F': 35327},
+    15: {'M': 36809, 'F': 34364},
+    16: {'M': 40559, 'F': 38170},
+    17: {'M': 41890, 'F': 39505},
+    18: {'M': 42059, 'F': 39873},
+    19: {'M': 47936, 'F': 46936},
+    20: {'M': 56061, 'F': 57323},
+    21: {'M': 53898, 'F': 58438},
+    22: {'M': 58294, 'F': 63424},
+    23: {'M': 63413, 'F': 71587},
+    24: {'M': 67447, 'F': 76269},
+    25: {'M': 74078, 'F': 81060},
+    26: {'M': 79830, 'F': 83840},
+    27: {'M': 82196, 'F': 84142},
+    28: {'M': 84946, 'F': 86746},
+    29: {'M': 82914, 'F': 84782},
+    30: {'M': 76371, 'F': 75424},
+    31: {'M': 73168, 'F': 73712},
+    32: {'M': 72712, 'F': 72200},
+    33: {'M': 68458, 'F': 70412},
+    34: {'M': 69033, 'F': 68454},
+    35: {'M': 69548, 'F': 69407},
+    36: {'M': 68190, 'F': 68069},
+    37: {'M': 74818, 'F': 74083},
+    38: {'M': 78505, 'F': 78992},
+    39: {'M': 79575, 'F': 78502},
+    40: {'M': 77488, 'F': 77753},
+    41: {'M': 74846, 'F': 77753},
+    42: {'M': 65298, 'F': 64384},
+    43: {'M': 68369, 'F': 72073},
+    44: {'M': 68778, 'F': 69452},
+    45: {'M': 69342, 'F': 71764},
+    46: {'M': 76365, 'F': 76524},
+    47: {'M': 77451, 'F': 81184},
+    48: {'M': 80342, 'F': 81217},
+    49: {'M': 84709, 'F': 85587},
+    50: {'M': 81289, 'F': 83186},
+    51: {'M': 79949, 'F': 82015},
+    52: {'M': 77305, 'F': 80595},
+    53: {'M': 70591, 'F': 76788},
+    54: {'M': 68942, 'F': 66524},
+    55: {'M': 69941, 'F': 73872},
+    56: {'M': 69971, 'F': 73061},
+    57: {'M': 67097, 'F': 69182},
+    58: {'M': 72290, 'F': 74638},
+    59: {'M': 72281, 'F': 78715},
+    60: {'M': 73744, 'F': 82105},
+    61: {'M': 69632, 'F': 76387},
+    62: {'M': 64859, 'F': 71001},
+    63: {'M': 64348, 'F': 71117},
+    64: {'M': 58022, 'F': 65238},
+    65: {'M': 60409, 'F': 69675},
+    66: {'M': 52243, 'F': 57904},
+    67: {'M': 45398, 'F': 51517},
+    68: {'M': 49382, 'F': 55852},
+    69: {'M': 34423, 'F': 39014},
+    70: {'M': 38180, 'F': 43578},
+    71: {'M': 37924, 'F': 44277},
+    72: {'M': 37394, 'F': 43431},
+    73: {'M': 37515, 'F': 44936},
+    74: {'M': 30036, 'F': 36223},
+    75: {'M': 26301, 'F': 31527},
+    76: {'M': 26380, 'F': 32006},
+    77: {'M': 25298, 'F': 31255},
+    78: {'M': 29950, 'F': 36403},
+    79: {'M': 23303, 'F': 29217},
+    80: {'M': 18976, 'F': 25060},
+    81: {'M': 17966, 'F': 24561},
+    82: {'M': 14973, 'F': 21437},
+    83: {'M': 12609, 'F': 19360},
+    84: {'M': 10472, 'F': 17278},
+    85: {'M': 9129, 'F': 16026},
+    86: {'M': 6895, 'F': 13259},
+    87: {'M': 5412, 'F': 10984},
+    88: {'M': 4393, 'F': 9557},
+    89: {'M': 3066, 'F': 7594},
+    90: {'M': 2398, 'F': 6626},
+    91: {'M': 2121, 'F': 5665},
+    92: {'M': 1490, 'F': 4668},
+    93: {'M': 1091, 'F': 3624},
+    94: {'M': 673, 'F': 2454},
+    95: {'M': 440, 'F': 1769},
+    96: {'M': 392, 'F': 1241},
+    97: {'M': 380, 'F': 1125},
+    98: {'M': 191, 'F': 757},
+    99: {'M': 136, 'F': 499},
+    100: {'M': 200, 'F': 827},
+}
 
 
 class Population(object):
@@ -225,7 +325,7 @@ class Population(object):
 
 
 class Pyramid(Population):
-    def __init__(self, age_range=5, num_stacks=17, max_age_layer=100, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
+    def __init__(self, age_range=5, num_stacks=17, max_age_layer=100, age_data=None, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
         super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
         # declare class variables
         self.__age_range = age_range
@@ -235,6 +335,8 @@ class Pyramid(Population):
         self.__age_to_stack = None
         # insert values into class variables
         self.build_stacks()
+        if age_data:
+            self.update_age_layers(age_data)
         return
 
     def __repr__(self):
@@ -291,26 +393,6 @@ class Pyramid(Population):
         self.__age_to_stack = age_to_stack
         return
 
-    def update_age_genders(self, age: int, male, female):
-        if not isinstance(age, int):
-            raise ValueError(f"age '{age}' is not an integer.")
-        elif not (0 <= age <= self.__max_age_layer):
-            raise ValueError(f"age '{age}' is out of range (min=0, max={self.__max_age_layer}).")
-        (stack_idx, age_idx) = self.__age_to_stack[age]
-        self.stacks[stack_idx].ages[age_idx].update_genders(male, female)
-        if self.is_total_sum():
-            self.stacks[stack_idx].sum_ages()
-            self.sum_stacks()
-
-    def is_ages_complete(self):
-        is_complete = True
-        for stack in self.stacks:
-            for age in stack.ages:
-                if not age.is_complete():
-                    is_complete = False
-                    break
-        return is_complete
-
     def sum_stacks(self):
         if not self.is_total_sum():
             raise NotImplementedError("sum_stacks() is not available when __is_total_sum is False")
@@ -343,6 +425,40 @@ class Pyramid(Population):
             self.update_genders(male, female)
         elif sum_total:
             self.update_total(total)
+        return
+
+    # def update_stack(self, min_age: int, total=None, male=None, female=None):
+    #     return
+
+    def is_age_valid(self, age: int,):
+        if not isinstance(age, int):
+            return False
+        elif not (0 <= age <= self.__max_age_layer):
+            return False
+        return True
+
+    def update_age(self, age: int, total=None, male=None, female=None):
+        if not self.is_age_valid(age):
+            raise ValueError(f"age '{age}' is not valid.")
+        (stack_idx, age_idx) = self.__age_to_stack[age]
+        self.stacks[stack_idx].ages[age_idx].update(total=total, male=male, female=female)
+        if self.is_total_sum():
+            self.stacks[stack_idx].sum_ages()
+            self.sum_stacks()
+
+    def update_age_layers(self, age_data):
+        for key, value in age_data.items():
+            age = key
+            t = None
+            m = None
+            f = None
+            if 'T' in value.keys():
+                t = value['T']
+            if 'M' in value.keys():
+                m = value['M']
+            if 'F' in value.keys():
+                f = value['F']
+            self.update_age(age, total=t, male=m, female=f)
         return
 
 
