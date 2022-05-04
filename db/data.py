@@ -60,8 +60,12 @@ def insert_dict(conn: mariadb.connection, db_table: str, new_data: dict):
 def insert_many(conn: mariadb.connection, db_table: str, columns: list, many_values: list):
     # many_values is a list of values list
     select_str = list_to_select(columns)
-    placeholder_str = ", ".join(['?'] * len(select_str))
-    insert_data = [tuple(values) for values in many_values]
+
+    #placeholder_str = ", ".join(['?'] * len(select_str))
+    placeholder_str = ", ".join(['?'] * len(columns))
+
+    # insert_data = [tuple(values) for values in many_values]
+    insert_data = [tuple(d[k] for k in columns) for d in many_values]
 
     query = f"INSERT INTO {db_table} ({select_str}) VALUES ({placeholder_str})"
     cur = conn.cursor()

@@ -6,12 +6,13 @@ import pandas as pd
 
 from pathlib import Path
 
-from db.connector import db_connect, db_execute
+from db.connector import db_connect, db_execute, db_executemany
 
-from db.data import insert_dict
+from db.data import insert_dict, insert_many
+from db.query import *
 
 data_dir = 'C:/Users/YJ/SynologyDrive'
-path = 'C:/Users/YJ/SynologyDrive/test/시도_성_연령_각세_별_사망자수_2020.csv'
+path = 'C:/Users/YJ/SynologyDrive/test/시도_성_연령_각세_별_사망자수_2019.csv'
 data =[]
 
 mapping = {'시도별':'admin_div_num',
@@ -31,7 +32,10 @@ def read_csv_mapping(path):
         dict1 = dict(zip(header,i))
         dict1['year'] = year
         data.append(dict1)
-    return data
+
+    header = list(dict1.keys())
+
+    return data, header
 
 def read_csv_as_dict_list(file_path: Path):
     data = []
@@ -52,21 +56,23 @@ lst1 =[]
 #     lst1.append(row)
 # print(lst1)
 '''
-read_csv_mapping(path)
+# read_csv_mapping(path)
+result = read_csv_mapping(path)
 
-lst1 =data
+lst1 =result[0]
+header = result[1]
 
 admin_div_num ={}
 div_code=[]
 div_name=[]
 #query1 ='INSERT INTO annual_deaths (admin_div_num,year,age,gender,deaths) VALUES (1000000000,2019,13,"M",1)'
-#query2 ='Delete from annual_deaths'
+query2 ='Delete from annual_deaths'
 query3 = 'Select admin_div_num, name from admin_division '
 
 conn = db_connect('kor_population')
 cur = conn.cursor()
 
-
+cur.execute(query2)
 cur.execute(query3)
 result = cur.fetchall()
 
@@ -77,14 +83,12 @@ for r_data in result:
 
 admin_div_num = dict(zip(div_name,div_code))
 
-cur.close()
-conn.close()
 # for문으로 admin_div_num value num으로 바꾸기
 for dict in lst1:
     #if 구문 사용해서 gender T,F,M로 바꾸기
     if dict['gender'] == '계':
         dict['gender'] = 'T'
-    elif dict['gender'] == '남':
+    elif dict['gender'] == '남자':
         dict['gender'] = 'M'
     else:
         dict['gender'] = 'F'
@@ -100,7 +104,23 @@ for dict in lst1:
     for k,v in dict.items():
         if v in admin_div_num : dict[k]=admin_div_num[v]
 
-print(lst1)
+## age ,death, year 값 int로 변환
+for i in lst1:
+    i['year'] = int(i['year'])
+    i['deaths'] = int(i['deaths'])
+    i['age'] = int(i['age'])
+
+insert_many(conn,'annual_deaths',header,lst1)
+
+cur.close()
+conn.commit()
+conn.close()
+
+
+# conn = db_connect('kor_population')
+# cur = conn.cursor()
+#
+# insert_many(conn,'annual_deaths',)
 
 # with open('C:/JupyterProject/pandas_data/read_csv_sample.csv', mode='r') as sample:
 #     reader = csv.reader(sample)
