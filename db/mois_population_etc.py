@@ -115,14 +115,3 @@ def get_mois_household_all(admin_div_numbers: list, from_year=2008, from_month=1
 
 def get_mois_household_resident(admin_div_numbers: list, from_year=2010, from_month=1, till_year=2021, till_month=12):
     get_mois_population_etc(admin_div_numbers, 'households', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month, population_type='Y')
-
-
-get_mois_birth(admin_div_num_list)
-get_mois_death(admin_div_num_list)
-get_mois_household_all(admin_div_num_list)
-get_mois_household_resident(admin_div_num_list)
-
-get_mois_birth(list(jr_admin_div_num_dict.keys()))
-get_mois_death(list(jr_admin_div_num_dict.keys()))
-get_mois_household_all(list(jr_admin_div_num_dict.keys()))
-get_mois_household_resident(list(jr_admin_div_num_dict.keys()))

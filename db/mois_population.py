@@ -102,14 +102,3 @@ def get_mois_population_missing(admin_div_numbers: list, from_year=2010, from_mo
 
 def get_mois_population_overseas(admin_div_numbers: list, from_year=2015, from_month=1, till_year=2021, till_month=12):
     get_mois_population(admin_div_numbers, 'O', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month)
-
-
-get_mois_population_all(admin_div_num_list)
-get_mois_population_resident(admin_div_num_list)
-get_mois_population_missing(admin_div_num_list)
-get_mois_population_overseas(admin_div_num_list)
-
-get_mois_population_all(list(jr_admin_div_num_dict.keys()))
-get_mois_population_resident(list(jr_admin_div_num_dict.keys()))
-get_mois_population_missing(list(jr_admin_div_num_dict.keys()))
-get_mois_population_overseas(list(jr_admin_div_num_dict.keys()))
