@@ -3,31 +3,31 @@ import codecs
 from pathlib import Path
 from time import sleep
 
-from db.data_loc import data_dir
-from db.mois import resp_encoding, save_encoding, source_name, admin_div_num_list, jr_admin_div_num_dict
+from data.data_loc import data_dir
+from data.mois import resp_encoding, save_encoding, source_name, admin_div_num_list, jr_admin_div_num_dict
 
 data_name_dict = {
     '': 'population_all',
     'Y': 'population_resident',
-    'N': 'population_missing',
+    'N': 'population_unknown',
     'O': 'population_overseas',
 }
 
 
-def get_mois_population(admin_div_numbers: list, population_type: str, from_year=2008, from_month=1, till_year=2021, till_month=12):
-    data_name = data_name_dict[population_type]
+def get_mois_population(admin_div_numbers: list, resident_type: str, from_year=2008, from_month=1, till_year=2021, till_month=12):
+    data_name = data_name_dict[resident_type]
     for admin_div_num in admin_div_numbers:
         dir_path = Path(data_dir, source_name, data_name, admin_div_num)
         dir_path.mkdir(parents=True, exist_ok=True)
 
-        if admin_div_num == '1000000000':
+        if admin_div_num == '0000000000':
             sltOrgType = '1'
             sltOrgLvl1 = 'A'
             sltOrgLvl2 = 'A'
             xlsStats = '1'                                  # xlsStats -  1: 현재화면,  2: 전체시군구현황,  3: 전체읍면동현황
         else:
             sltOrgType = '2'
-            if admin_div_num[2:] == '00000000':
+            if admin_div_num[2:] == '0' * 8:
                 sltOrgLvl1 = admin_div_num
                 sltOrgLvl2 = 'A'
                 xlsStats = '1'
@@ -61,7 +61,7 @@ def get_mois_population(admin_div_numbers: list, population_type: str, from_year
                     'sltOrgLvl2': sltOrgLvl2,               # A(모든 시군구) of 시군구 코드
                     'gender': 'gender',                     # '성별' 표시
                     'sum': 'sum',                           # '계' 표시
-                    'sltUndefType': population_type,        # '': 전체, 'Y': 거주자, 'N': 거주불명자, 'O': 재외국민
+                    'sltUndefType': resident_type,        # '': 전체, 'Y': 거주자, 'N': 거주불명자, 'O': 재외국민
                     'searchYearStart': str(year),
                     'searchMonthStart': f'{month:02}',
                     'searchYearEnd': str(year),
@@ -96,7 +96,7 @@ def get_mois_population_resident(admin_div_numbers: list, from_year=2010, from_m
     get_mois_population(admin_div_numbers, 'Y', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month)
 
 
-def get_mois_population_missing(admin_div_numbers: list, from_year=2010, from_month=10, till_year=2021, till_month=12):
+def get_mois_population_unknown(admin_div_numbers: list, from_year=2010, from_month=10, till_year=2021, till_month=12):
     get_mois_population(admin_div_numbers, 'N', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month)
 
 

@@ -3,8 +3,8 @@ import codecs
 from pathlib import Path
 from time import sleep
 
-from db.data_loc import data_dir
-from db.mois import resp_encoding, save_encoding, source_name, admin_div_num_list, jr_admin_div_num_dict
+from data.data_loc import data_dir
+from data.mois import resp_encoding, save_encoding, source_name, admin_div_num_list, jr_admin_div_num_dict
 
 data_name_dict = {
     'birth': 'birth',              # birth: 주민등록기준 지역별 출생등록
@@ -13,7 +13,7 @@ data_name_dict = {
 }
 
 
-def get_mois_population_etc(admin_div_numbers: list, category: str, from_year=2008, from_month=1, till_year=2021, till_month=12, population_type=None):
+def get_mois_population_etc(admin_div_numbers: list, category: str, from_year=2008, from_month=1, till_year=2021, till_month=12, resident_type=None):
     if category == 'birth':
         referer = 'https://jumin.mois.go.kr/etcStatBirth.do'
     elif category == 'death':
@@ -25,19 +25,19 @@ def get_mois_population_etc(admin_div_numbers: list, category: str, from_year=20
         return
     data_name = data_name_dict[category]
     if category == 'households':
-        if population_type == '':
+        if resident_type == '':
             data_name += '_all'
-        elif population_type == 'Y':
+        elif resident_type == 'Y':
             data_name += '_resident'
         else:
-            print(f">>> Unknown population_type '{population_type}'.")
+            print(f">>> Unknown population_type '{resident_type}'.")
             return
 
     for admin_div_num in admin_div_numbers:
         dir_path = Path(data_dir, source_name, data_name, admin_div_num)
         dir_path.mkdir(parents=True, exist_ok=True)
 
-        if admin_div_num == '1000000000':
+        if admin_div_num == '0000000000':
             sltOrgType = '1'
             sltOrgLvl1 = 'A'
             sltOrgLvl2 = 'A'
@@ -85,7 +85,7 @@ def get_mois_population_etc(admin_div_numbers: list, category: str, from_year=20
                     'category': category,
                 }
                 if category == 'households':
-                    data.update({'sltUndefType': population_type})      # '': 전체, 'Y': 거주자
+                    data.update({'sltUndefType': resident_type})      # '': 전체, 'Y': 거주자
 
                 resp = requests.post(url, data, headers=headers, timeout=5)
                 decoded_content = resp.content.decode(resp_encoding)
@@ -110,8 +110,8 @@ def get_mois_death(admin_div_numbers: list, from_year=2008, from_month=1, till_y
 
 
 def get_mois_household_all(admin_div_numbers: list, from_year=2008, from_month=1, till_year=2021, till_month=12):
-    get_mois_population_etc(admin_div_numbers, 'households', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month, population_type='')
+    get_mois_population_etc(admin_div_numbers, 'households', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month, resident_type='')
 
 
 def get_mois_household_resident(admin_div_numbers: list, from_year=2010, from_month=1, till_year=2021, till_month=12):
-    get_mois_population_etc(admin_div_numbers, 'households', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month, population_type='Y')
+    get_mois_population_etc(admin_div_numbers, 'households', from_year=from_year, from_month=from_month, till_year=till_year, till_month=till_month, resident_type='Y')

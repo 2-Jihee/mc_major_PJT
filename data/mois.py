@@ -2,7 +2,7 @@ resp_encoding = 'ansi'
 save_encoding = 'utf-8'
 source_name = 'mois'
 admin_div_num_list = [
-    '1000000000',
+    '0000000000',
     '1100000000',
     '2600000000',
     '2700000000',

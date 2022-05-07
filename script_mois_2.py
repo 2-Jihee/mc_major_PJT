@@ -1,8 +1,7 @@
-from db.mois_population import *
-from db.mois_population_etc import *
+from data.mois_population import *
+from data.mois_population_etc import *
 
-get_mois_birth(['4600000000'], 2017, 3)
-get_mois_birth(['4700000000', '4800000000', '5000000000'])
+# get_mois_birth(admin_div_num_list)
 get_mois_death(admin_div_num_list)
 get_mois_household_all(admin_div_num_list)
 get_mois_household_resident(admin_div_num_list)
