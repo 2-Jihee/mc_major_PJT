@@ -1,10 +1,11 @@
-import requests
 import codecs
+import requests
+from requests.adapters import HTTPAdapter, Retry
 from pathlib import Path
 from time import sleep
 
 from data.data_loc import data_dir
-from data.mois import resp_encoding, save_encoding, source_name, admin_div_num_list, jr_admin_div_num_dict
+from data.mois import resp_encoding, save_encoding, source_name, jr_admin_div_num_dict
 
 data_name_dict = {
     'birth': 'birth',              # birth: 주민등록기준 지역별 출생등록
@@ -87,10 +88,16 @@ def get_mois_population_etc(admin_div_numbers: list, category: str, from_year=20
                 if category == 'households':
                     data.update({'sltUndefType': resident_type})      # '': 전체, 'Y': 거주자
 
-                resp = requests.post(url, data, headers=headers, timeout=5)
+                sess = requests.Session()
+                retries = Retry(total=5, backoff_factor=5, status_forcelist=[429, 500, 502, 503, 504])
+                sess.mount('http://', HTTPAdapter(max_retries=retries))
+                sess.mount('https://', HTTPAdapter(max_retries=retries))
+                timeouts = (5, 60)
+
+                resp = sess.post(url, data, headers=headers, timeout=timeouts)
                 decoded_content = resp.content.decode(resp_encoding)
 
-                fname = f'{admin_div_num}_{year}_{month}_{data_name}.csv'
+                fname = f'{admin_div_num}_{year:0>4}_{month:0>2}_{data_name}.csv'
                 file_path = dir_path / fname
                 with codecs.open(file_path.as_posix(), mode='x', encoding=save_encoding) as file:
                     file.write(decoded_content)
