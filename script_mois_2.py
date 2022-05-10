@@ -1,67 +1,10 @@
-from data.mois_population import *
-from data.mois_population_etc import *
+from data.mois import *
 
-
-get_mois_population_all(['4679000000'], 2020, 9)
-lst = [
-    '4680000000',
-    '4681000000',
-    '4682000000',
-    '4683000000',
-    '4684000000',
-    '4686000000',
-    '4687000000',
-    '4688000000',
-    '4689000000',
-    '4690000000',
-    '4691000000',
-    '4711000000',
-    '4713000000',
-    '4715000000',
-    '4717000000',
-    '4719000000',
-    '4721000000',
-    '4723000000',
-    '4725000000',
-    '4728000000',
-    '4729000000',
-    '4772000000',
-    '4773000000',
-    '4775000000',
-    '4776000000',
-    '4777000000',
-    '4782000000',
-    '4783000000',
-    '4784000000',
-    '4785000000',
-    '4790000000',
-    '4792000000',
-    '4793000000',
-    '4794000000',
-    '4812000000',
-    '4817000000',
-    '4822000000',
-    '4824000000',
-    '4825000000',
-    '4827000000',
-    '4831000000',
-    '4833000000',
-    '4872000000',
-    '4873000000',
-    '4874000000',
-    '4882000000',
-    '4884000000',
-    '4885000000',
-    '4886000000',
-    '4887000000',
-    '4888000000',
-    '4889000000',
-    '5011000000',
-    '5013000000',
-]
-get_mois_population_all(lst)
-
-get_mois_birth(list(jr_admin_div_num_dict.keys()))
-get_mois_death(list(jr_admin_div_num_dict.keys()))
-get_mois_household_all(list(jr_admin_div_num_dict.keys()))
-get_mois_household_resident(list(jr_admin_div_num_dict.keys()))
+get_mois_population_all(['0000000000'], True)
+get_mois_population_resident(['0000000000'], True)
+get_mois_population_unknown(['0000000000'], True)
+get_mois_population_overseas(['0000000000'], True)
+get_mois_birth(['0000000000'], True)
+get_mois_death(['0000000000'], True)
+get_mois_household_all(['0000000000'], True)
+get_mois_household_resident(['0000000000'], True)
