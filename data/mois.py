@@ -1,20 +1,27 @@
 import codecs
 import re
 import requests
+import pandas as pd
 from requests.adapters import Retry, HTTPAdapter
 from pathlib import Path
+from natsort import natsorted
 from time import sleep
 
 from data.data_loc import data_dir
+from db.connector import pop_db, db_connect
+from db.query import select_one_row_one_column, insert_dict
+from pop.model import str_to_int
 
 resp_encoding = 'ansi'
 save_encoding = 'utf-8'
 source_name = 'mois'
 
-patt_date = r'(?P<year>\d+)년\W*(?P<month>\d+)월'
-patt_household = r'(?P<household_size>\d+)인세대'
-patt_last_age = r'(?P<last_age>\d+)세\W*이상'
-patt_age = r'(?P<age>\d+)세'
+date_patt_str = r'(?P<year>\d+)년\W*(?P<month>\d+)월'
+household_patt_str = r'(?P<household_size>\d+)인세대'
+last_age_patt_str = r'(?P<last_age>\d+)세\W*이상'
+age_patt_str = r'(?P<age>\d+)세'
+
+admin_div_table = 'admin_division'
 
 admin_div_code_list = [
     '0000000000',
@@ -35,238 +42,6 @@ admin_div_code_list = [
     '4700000000',
     '4800000000',
     '5000000000',
-]
-
-jr_admin_div_code_list = [
-    '1111000000',
-    '1114000000',
-    '1117000000',
-    '1120000000',
-    '1121500000',
-    '1123000000',
-    '1126000000',
-    '1129000000',
-    '1130500000',
-    '1132000000',
-    '1135000000',
-    '1138000000',
-    '1141000000',
-    '1144000000',
-    '1147000000',
-    '1150000000',
-    '1153000000',
-    '1154500000',
-    '1156000000',
-    '1159000000',
-    '1162000000',
-    '1165000000',
-    '1168000000',
-    '1171000000',
-    '1174000000',
-    '2611000000',
-    '2614000000',
-    '2617000000',
-    '2620000000',
-    '2623000000',
-    '2626000000',
-    '2629000000',
-    '2632000000',
-    '2635000000',
-    '2638000000',
-    '2641000000',
-    '2644000000',
-    '2647000000',
-    '2650000000',
-    '2653000000',
-    '2671000000',
-    '2711000000',
-    '2714000000',
-    '2717000000',
-    '2720000000',
-    '2723000000',
-    '2726000000',
-    '2729000000',
-    '2771000000',
-    '2811000000',
-    '2814000000',
-    '2817700000',
-    '2818500000',
-    '2820000000',
-    '2823700000',
-    '2824500000',
-    '2826000000',
-    '2871000000',
-    '2872000000',
-    '2911000000',
-    '2914000000',
-    '2915500000',
-    '2917000000',
-    '2920000000',
-    '3011000000',
-    '3014000000',
-    '3017000000',
-    '3020000000',
-    '3023000000',
-    '3111000000',
-    '3114000000',
-    '3117000000',
-    '3120000000',
-    '3171000000',
-    '3611000000',
-    '4111000000',
-    '4113000000',
-    '4115000000',
-    '4117000000',
-    '4119000000',
-    '4121000000',
-    '4122000000',
-    '4125000000',
-    '4127000000',
-    '4128000000',
-    '4129000000',
-    '4131000000',
-    '4136000000',
-    '4137000000',
-    '4139000000',
-    '4141000000',
-    '4143000000',
-    '4145000000',
-    '4146000000',
-    '4148000000',
-    '4150000000',
-    '4155000000',
-    '4157000000',
-    '4159000000',
-    '4161000000',
-    '4163000000',
-    '4165000000',
-    '4167000000',
-    '4180000000',
-    '4182000000',
-    '4183000000',
-    '4211000000',
-    '4213000000',
-    '4215000000',
-    '4217000000',
-    '4219000000',
-    '4221000000',
-    '4223000000',
-    '4272000000',
-    '4273000000',
-    '4275000000',
-    '4276000000',
-    '4277000000',
-    '4278000000',
-    '4279000000',
-    '4280000000',
-    '4281000000',
-    '4282000000',
-    '4283000000',
-    '4311000000',
-    '4313000000',
-    '4315000000',
-    '4372000000',
-    '4373000000',
-    '4374000000',
-    '4374500000',
-    '4375000000',
-    '4376000000',
-    '4377000000',
-    '4380000000',
-    '4413000000',
-    '4415000000',
-    '4418000000',
-    '4420000000',
-    '4421000000',
-    '4423000000',
-    '4425000000',
-    '4427000000',
-    '4471000000',
-    '4476000000',
-    '4477000000',
-    '4479000000',
-    '4480000000',
-    '4481000000',
-    '4482500000',
-    '4511000000',
-    '4513000000',
-    '4514000000',
-    '4518000000',
-    '4519000000',
-    '4521000000',
-    '4571000000',
-    '4572000000',
-    '4573000000',
-    '4574000000',
-    '4575000000',
-    '4577000000',
-    '4579000000',
-    '4580000000',
-    '4611000000',
-    '4613000000',
-    '4615000000',
-    '4617000000',
-    '4623000000',
-    '4671000000',
-    '4672000000',
-    '4673000000',
-    '4677000000',
-    '4678000000',
-    '4679000000',
-    '4680000000',
-    '4681000000',
-    '4682000000',
-    '4683000000',
-    '4684000000',
-    '4686000000',
-    '4687000000',
-    '4688000000',
-    '4689000000',
-    '4690000000',
-    '4691000000',
-    '4711000000',
-    '4713000000',
-    '4715000000',
-    '4717000000',
-    '4719000000',
-    '4721000000',
-    '4723000000',
-    '4725000000',
-    '4728000000',
-    '4729000000',
-    '4772000000',
-    '4773000000',
-    '4775000000',
-    '4776000000',
-    '4777000000',
-    '4782000000',
-    '4783000000',
-    '4784000000',
-    '4785000000',
-    '4790000000',
-    '4792000000',
-    '4793000000',
-    '4794000000',
-    '4812000000',
-    '4817000000',
-    '4822000000',
-    '4824000000',
-    '4825000000',
-    '4827000000',
-    '4831000000',
-    '4833000000',
-    '4872000000',
-    '4873000000',
-    '4874000000',
-    '4882000000',
-    '4884000000',
-    '4885000000',
-    '4886000000',
-    '4887000000',
-    '4888000000',
-    '4889000000',
-    '5011000000',
-    '5013000000',
 ]
 jr_admin_div_code_dict = {
     '1111000000': '1100000000',
@@ -500,17 +275,23 @@ jr_admin_div_code_dict = {
     '5013000000': '5000000000',
 }
 
-data_type_dict = {
-    'B': 'birth',               # birth: 주민등록기준 지역별 출생등록
-    'D': 'death',               # death: 주민등록기준 지역별 사망말소
-    'H': 'household',           # households: 지역별 세대원수별 세대수
-    'P': 'population',          # 연령별 주민등록 인구형황
+data_type_table = {
+    'P': 'mois_population',
+    'B': 'mois_birth',
+    'D': 'mois_death',
+    'H': 'mois_household',
+}
+data_type_desc = {
+    'P': 'population',              # 연령별 주민등록 인구형황
+    'B': 'birth',                   # birth: 주민등록기준 지역별 출생등록
+    'D': 'death',                   # death: 주민등록기준 지역별 사망말소
+    'H': 'household',               # households: 지역별 세대원수별 세대수
 }
 resident_type_dict = {
-    '-': 'all',                 # 전체
-    'R': 'resident',            # resident
-    'U': 'unknown',             # unknown domicile
-    'O': 'overseas',            # overseas
+    '-': 'all',                     # 전체
+    'R': 'resident',                # resident
+    'U': 'unknown',                 # unknown domicile
+    'O': 'overseas',                # overseas
 }
 data_name_list = [
     'birth',
@@ -523,31 +304,32 @@ data_name_list = [
     'population_overseas',
 ]
 
-resident_type_to_sltUndefType = {
-    '-': '',                    # '': 전체
-    'R': 'Y',                   # 'Y': 거주자
-    'U': 'N',                   # 'N': 거주불명자
-    'O': 'O',                   # 'O': 재외국민
+resident_type_to_slt_undef_type = {
+    '-': '',                        # '': 전체
+    'R': 'Y',                       # 'Y': 거주자
+    'U': 'N',                       # 'N': 거주불명자
+    'O': 'O',                       # 'O': 재외국민
 }
-resident_type_to_col_key = {
-    'R': '거주자',              # resident
-    'U': '거주불명자',          # unknown domicile
-    'O': '재외국민',            # overseas
+resident_type_to_col_name = {
+    'R': '거주자',                  # resident
+    'U': '거주불명자',              # unknown domicile
+    'O': '재외국민',                # overseas
 }
 
 
 # # ---------- generic ------------------------------------------------------------------------------------------------------------------------
 
 def get_data_name(data_type: str, resident_type=None):
-    if data_type not in data_type_dict.keys():
+    if data_type not in data_type_desc.keys():
         raise ValueError(f">>> Input data_type '{data_type}' is invalid.")
-    data_name = data_type_dict[data_type]
+    data_name = data_type_desc[data_type]
     if resident_type is not None:
         if resident_type not in resident_type_dict.keys():
             raise ValueError(f">>> Input resident_type '{resident_type}' is invalid.")
         data_name += f"_{resident_type_dict[resident_type]}"
-        if data_name not in data_name_list:
-            raise ValueError(f">>> Invalid input combination: data_type '{data_type}' and resident_type '{resident_type}' are not compatible.")
+
+    if data_name not in data_name_list:
+        raise ValueError(f">>> Invalid input combination: data_type '{data_type}' and resident_type '{resident_type}' are not compatible.")
 
     return data_name
 
@@ -571,37 +353,37 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
         dir_path.mkdir(parents=True, exist_ok=True)
 
         if admin_div_code == '0000000000':
-            sltOrgType = '1'
-            sltOrgLvl1 = 'A'
-            sltOrgLvl2 = 'A'
+            slt_org_type = '1'
+            slt_org_lvl1 = 'A'
+            slt_org_lvl2 = 'A'
         else:
-            sltOrgType = '2'
-            if admin_div_code[2:] == '0'*8:
-                sltOrgLvl1 = admin_div_code
-                sltOrgLvl2 = 'A'
+            slt_org_type = '2'
+            if admin_div_code[2:] == '0' * (len(admin_div_code) - 2):
+                slt_org_lvl1 = admin_div_code
+                slt_org_lvl2 = 'A'
             else:
                 if data_type != 'P' and is_detail_data is False:
                     print(f">>> admin_div_code '{admin_div_code}' is not available with data_type '{data_type}' when is_detail_data is False.")
                     continue
-                sltOrgLvl1 = jr_admin_div_code_dict[admin_div_code]
-                sltOrgLvl2 = admin_div_code
+                slt_org_lvl1 = jr_admin_div_code_dict[admin_div_code]
+                slt_org_lvl2 = admin_div_code
         if is_detail_data:
-            xlsStats = '3'          # xlsStats -  3: 전체읍면동현황 / 2: 전체시군구현황
+            xls_stats = '3'              # xlsStats -  3: 전체읍면동현황 / 2: 전체시군구현황
         else:
-            xlsStats = '1'          # xlsStats -  1: 현재화면
+            xls_stats = '1'              # xlsStats -  1: 현재화면
 
         if data_type == 'P':
-            url = f'https://jumin.mois.go.kr/downloadCsvAge.do?searchYearMonth=month&xlsStats={xlsStats}'
+            url = f'https://jumin.mois.go.kr/downloadCsvAge.do?searchYearMonth=month&xlsStats={xls_stats}'
             referer = 'https://jumin.mois.go.kr/ageStatMonth.do'
             category = 'month'
         else:
-            url = f'https://jumin.mois.go.kr/downloadCsvEtc.do?searchYearMonth=month&xlsStats={xlsStats}'
+            url = f'https://jumin.mois.go.kr/downloadCsvEtc.do?searchYearMonth=month&xlsStats={xls_stats}'
             if data_type == 'B':
                 referer = 'https://jumin.mois.go.kr/etcStatBirth.do'
-                category = data_type_dict[data_type]
+                category = data_type_desc[data_type]
             elif data_type == 'D':
                 referer = 'https://jumin.mois.go.kr/etcStatDeath.do'
-                category = data_type_dict[data_type]
+                category = data_type_desc[data_type]
             elif data_type == 'H':
                 referer = 'https://jumin.mois.go.kr/etcStatHouseholds.do'
                 category = 'households'
@@ -627,9 +409,9 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
 
             for month in range(start_month, end_month + 1):
                 data = {
-                    'sltOrgType': sltOrgType,                   # 1: 전국  /  2: 시도
-                    'sltOrgLvl1': sltOrgLvl1,                   # A: 모든 시도  /  시도 코드('1100000000'-'5000000000')
-                    'sltOrgLvl2': sltOrgLvl2,                   # A: 모든 시군구)  /  시군구 코
+                    'sltOrgType': slt_org_type,                   # 1: 전국  /  2: 시도
+                    'sltOrgLvl1': slt_org_lvl1,                   # A: 모든 시도  /  시도 코드('1100000000'-'5000000000')
+                    'sltOrgLvl2': slt_org_lvl2,                   # A: 모든 시군구)  /  시군구 코
                     'category': category,                       # 데이터 유형 - year, month, birth, death, households
                     'searchYearStart': str(year),
                     'searchMonthStart': f'{month:02}',
@@ -639,7 +421,7 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
                     'sltOrderValue': 'ASC',                     # 데이터 정렬 방식 - ASC
                 }
                 if data_type in ['P', 'H']:
-                    data.update({'sltUndefType': resident_type_to_sltUndefType[resident_type]})
+                    data.update({'sltUndefType': resident_type_to_slt_undef_type[resident_type]})
                 if data_type == 'P':
                     data.update({
                         'gender': 'gender',                     # '성별' 표시
@@ -707,157 +489,261 @@ def get_mois_household_resident(admin_div_codes: list, is_detail_data=False, fro
 
 # # ---------- upload data ------------------------------------------------------------------------------------------------------------------------
 
-def mois_idx_to_admin_div_num(idx: str):
-    match_div_num = re.search(r'\d{10}', idx)
-    if match_div_num:
-        admin_div_code = match_div_num.group()
+def mois_idx_to_admin_div(idx: str):
+    admin_div_match = re.match(r'(.+)\((\d{10})\)', idx)
+    if admin_div_match:
+        admin_div_name = re.sub(r'\s+', ' ', admin_div_match.group(1).strip())
+        admin_div_code = admin_div_match.group(2)
         if admin_div_code == '1000000000':
             admin_div_code = '0000000000'
-        admin_div_num = int(admin_div_code)
     else:
-        admin_div_num = None
+        admin_div_name = None
+        admin_div_code = None
 
-    return admin_div_num
-
-
-def mois_col_key_to_col_data_type(col_key: str):
-    household_type = None
-    gender_type = None
-    age_type = None
-
-    col_data_type = None
-
-    data_keys = {'household_type': household_type,
-                 'gender_type': gender_type,
-                 'age_type': age_type}
-
-    return col_data_type, data_keys
+    return admin_div_name, admin_div_code
 
 
-def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_detail_data=False):
+def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_detail_data=False, pop_conn=None, from_year=None, from_month=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
     data_name = get_data_name(data_type, resident_type=resident_type)
+    date_patt = re.compile(date_patt_str)
+    if data_type == 'P':
+        last_age_patt = re.compile(last_age_patt_str)
+        age_patt = re.compile(age_patt_str)
+    elif data_type == 'H':
+        household_patt = re.compile(household_patt_str)
+
     for admin_div_code in admin_div_codes:
         dir_path = get_dir_path(admin_div_code, data_name, is_detail_data)
         if not dir_path.exists():
-            print(f">>> ")
+            print(f">>> Directory '{dir_path}' does not exist for data_name '{data_name}' and admin_div_code '{admin_div_code}'.")
             continue
 
-
-
-
-
-    parent_path = Path(data_dir, source_name, data_name)
-    d_types = data_name.split('_')
-
-    dir_paths = [p for p in parent_path.iterdir() if p.is_dir()]
-    dir_paths = natsorted(dir_paths)
-    for dir_path in dir_paths:
-        file_paths = [f for f in dir_path.iterdir() if f.suffix == '.csv']
+        fname_patt_str = fr"{admin_div_code}_(?P<year>\d+)_(?P<month>\d+)_{data_name}{'_detail' if is_detail_data else ''}.csv"
+        fname_patt = re.compile(fname_patt_str)
+        file_paths = [f_path for f_path in dir_path.iterdir() if f_path.is_file() and fname_patt.fullmatch(f_path.name)]
+        file_paths = natsorted(file_paths)
         for file_path in file_paths:
-            df = pd.read_csv(file_path.as_posix(), index_col=0)
+            fname_match = fname_patt.fullmatch(file_path.name)
+            fname_year = int(fname_match.group('year'))
+            fname_month = int(fname_match.group('month'))
+            if from_year is not None:
+                if fname_year < from_year:
+                    continue
+                elif fname_year == from_year and from_month is not None:
+                    if fname_month < from_month:
+                        continue
+
+            # read file
+            df = pd.read_csv(file_path.as_posix(), index_col=0, dtype='string')
+
+            # update index
             new_index = []
             for idx in df.index:
-                admin_div_num = mois_idx_to_admin_div_num(idx)
-                if admin_div_num is None:
-                    raise ValueError(f"Unknown admin_div type '{idx}'.")
-                new_index.append(admin_div_num)
+                (admin_div_name, admin_div_code) = mois_idx_to_admin_div(idx)
+                if '출장소' in admin_div_name:
+                    new_index.append(None)
+                    continue
+                admin_div_num = int(admin_div_code)
+                admin_div_name_full = select_one_row_one_column(pop_conn, admin_div_table, {'admin_div_num': admin_div_num}, 'name_full')
+                if admin_div_name_full is None:
+                    # register a new admin_div_num
+                    admin_div_name_split = admin_div_name.split(' ')
+                    if admin_div_num == 0:
+                        admin_div_level = 0
+                        senior_admin_div_num = None
+                    else:
+                        if admin_div_name_split[0][-1] == '시' or admin_div_name_split[-1][-1] == '군':
+                            admin_div_code_parts = [admin_div_code[0:2], admin_div_code[2:5], '', admin_div_code[5:8], admin_div_code[8:]]
+                        else:
+                            admin_div_code_parts = [admin_div_code[0:2], admin_div_code[2:4], admin_div_code[4:5], admin_div_code[5:8], admin_div_code[8:]]
+                        admin_div_level = 5             # lowest possible level
+                        for i in range(len(admin_div_code_parts) - 1, -1, -1):
+                            if admin_div_code_parts[i]:
+                                if not re.fullmatch('0+', admin_div_code_parts[i]):
+                                    admin_div_level = i + 1
+                                    break
+
+                        admin_div_code_parts[admin_div_level - 1] = '0' * len(admin_div_code_parts[admin_div_level - 1])
+                        senior_admin_div_num = int(''.join(admin_div_code_parts))
+                        senior_admin_div_name_full = select_one_row_one_column(pop_conn, admin_div_table, {'admin_div_num': senior_admin_div_num}, 'name_full')
+                        if senior_admin_div_name_full is None:
+                            raise ValueError(f"Unable to identify senior_admin_div_num for a new admin_div '{admin_div_name}' with admin_div_num '{admin_div_num}'.")
+                    insert_dict(pop_conn, admin_div_table, {'admin_div_num': admin_div_num, 'name_full': admin_div_name, 'name': admin_div_name_split[-1], 'admin_div_level': admin_div_level, 'senior_admin_div_num': senior_admin_div_num})
+                    pop_conn.commit()
+                new_index.append(admin_div_code)
             df.index = new_index
 
             # check resident_type of data
-            resident_type = '-'
-            for key, value in resident_type_to_col_key.items():
+            csv_resident_type = None
+            for key, value in resident_type_to_col_name.items():
                 if re.search(value, df.columns[0]):
-                    resident_type = key
+                    csv_resident_type = key
                     break
-            if d_types[0] in ['population', 'household']:
-                resident_type_str = resident_type_dict[resident_type]
-                if not d_types[1] == resident_type_str:
-                    raise ValueError(f"Provided data has resident type '{resident_type_str}' (data_type='{data_name}').")
+            if data_type in ['P', 'H'] and csv_resident_type is None:
+                csv_resident_type = '-'
+            if not csv_resident_type == resident_type:
+                print(f">>> File '{file_path.name}' contains data with resident_type '{csv_resident_type}', which is different from the provided resident_type '{resident_type}'.")
+                continue
 
-            for row_i, row in df.iterrows():
-                if d_types[0] in ['birth', 'death']:
-                    pop_data = {'T': None, 'M': None, 'F': None}
-                elif d_types[0] == 'population':
-                    age_data = {}
-                elif d_types[0] == 'household':
-                    household_data = {}
-                else:
-                    raise ValueError(f"Unknown data_type '{data_name}'.")
+            # columns to keys
+            col_keys = []
+            for col_name in df.columns:
+                csv_col_split = col_name.split('_')
 
-                for col_i, (col_key, csv_value) in enumerate(row.iteritems()):
-                    # skip redundant data
-                    if '연령구간' in col_key:
+                # determine date: year/month
+                date_match = date_patt.search(csv_col_split[0])
+                col_year = int(date_match.group('year'))
+                if col_year != fname_year:
+                    raise ValueError(f"Warning: year '{fname_year}' in filename is different from year '{col_year}' in csv column '{col_name}'.")
+                col_month = int(date_match.group('month'))
+                if col_month != fname_month:
+                    raise ValueError(f"Warning: month '{fname_month}' in filename is different from month '{col_month}' in csv column '{col_name}'.")
+
+                # get column types
+                if data_type == 'P':
+                    # skip col_key that contains redundant data
+                    if '연령구간' in col_name:
+                        col_keys.append(None)
                         continue
-                    # determine date: year/month
-                    col_parts = col_key.split('_')
-                    match_obj = re.search(patt_date, col_parts[0])
-                    year = match_obj.group('year')
-                    month = match_obj.group('month')
-                    # determine data-type
-                    col_data_type = None
-                    if col_parts[-1][-2:] == '세대':
-                        col_data_type = 'household'
-                        # determine household_type
-                        if re.search('전체', col_parts[-1]):
-                            household_type = '--'
-                        else:
-                            match_obj = re.search(patt_household, col_parts[-1])
-                            if not match_obj:
-                                raise ValueError(f"Unknown household_type in column index '{col_key}'.")
-                            household_size = match_obj.group('household_size')
-                            household_type = household_size.zfill(2)
+
+                    # determine gender_type
+                    if csv_col_split[1] == '남':
+                        gender_type = 'M'
+                    elif csv_col_split[1] == '여':
+                        gender_type = 'F'
+                    elif csv_col_split[1] == '계' or csv_col_split[1] in resident_type_to_col_name.values():
+                        gender_type = 'T'
                     else:
-                        # determine gender_type
-                        offset = 0
-                        if col_parts[1] == '남' or '남자' in col_parts[1]:
-                            gender_type = 'M'
-                        elif col_parts[1] == '여' or '여자' in col_parts[1]:
-                            gender_type = 'F'
-                        elif col_parts[1] == '계':
-                            gender_type = 'T'
-                        elif col_parts[1] in resident_type_to_col_key.values():
-                            gender_type = 'T'
-                            offset = 1
-                        else:
-                            raise ValueError(f"Unknown gender_type in column index '{col_key}'.")
-                        if len(col_parts) <= (2 - offset):
-                            col_data_type = 'birth/death'
-                        if len(col_parts) > (2 - offset):
-                            col_data_type = 'population'
-                            # determine age type
-                            if col_parts[-1] == '총인구수':
-                                age_type = '-----'
-                            else:
-                                match_last_age = re.search(patt_last_age, col_parts[-1])
-                                match_age = re.search(patt_age, col_parts[-1])
-                                if match_last_age:
-                                    age_type = '>=' + match_last_age.group('last_age').zfill(3)
-                                elif match_age:
-                                    age_type = '==' + match_age.group('age').zfill(3)
-                                else:
-                                    raise ValueError(f"Unknown age_type in column index '{col_key}'.")
-                    # check if identified data_type matches
-                    type_correct = False
-                    if d_types[0] in ['birth', 'death']:
-                        if col_data_type == 'birth/death':
-                            type_correct = True
+                        raise ValueError(f"Unknown gender_type in csv column '{col_name}'.")
+
+                    # determine age type
+                    if csv_col_split[-1] == '총인구수':
+                        age_type = 'age_total'
                     else:
-                        if d_types[0] == col_data_type:
-                            type_correct = True
-                    if not type_correct:
-                        raise ValueError(f"Provided data_type '{data_name}' and file do not match.")
-
-                    int_value = str_to_int(csv_value)
-                    if col_data_type == 'population':
-                        if not (age_type in age_data.keys()):
-                            age_data[age_type] = {}
-                        if gender_type in age_data[age_type].keys():
-                            if age_data[age_type][gender_type] != int_value:
-                                raise ValueError(f"Data contains duplicate data for '{data_name}': '{age_data[age_type][gender_type]}' vs '{value}'.")
+                        last_age_match = last_age_patt.search(csv_col_split[-1])
+                        age_match = age_patt.search(csv_col_split[-1])
+                        if last_age_match:
+                            age_type = f"age_{int(last_age_match.group('last_age'))}+"
+                        elif age_match:
+                            age_type = f"age_{int(age_match.group('age'))}"
                         else:
-                            age_data[age_type][gender_type] = int_value
+                            raise ValueError(f"Unknown age_type in csv column '{col_name}'.")
 
+                    col_keys.append({'age_type': age_type, 'gender_type': gender_type})
 
+                elif data_type in ['B', 'D']:
+                    # get gender_type
+                    if '남자' in csv_col_split[1]:
+                        gender_type = 'M'
+                    elif '여자' in csv_col_split[1]:
+                        gender_type = 'F'
+                    elif '계' in csv_col_split[1]:
+                        gender_type = 'T'
+                    else:
+                        raise ValueError(f"Unknown gender_type in csv column '{col_name}'.")
 
-                print(age_data)
-                print()
+                    col_keys.append({'gender_type': gender_type})
+
+                elif data_type == 'H':
+                    if '세대' not in csv_col_split[-1]:
+                        raise ValueError(f"csv column '{col_name}' does not indicate 'household' data.")
+
+                    # get household_type
+                    if '전체' in csv_col_split[-1]:
+                        household_type = 'size_total'
+                    else:
+                        household_match = household_patt.search(csv_col_split[-1])
+                        if not household_match:
+                            raise ValueError(f"Unknown household_type in data column '{col_name}'.")
+                        household_size = int(household_match.group('household_size'))
+                        household_type = f"size_{household_size}"
+
+                    col_keys.append({'household_type': household_type})
+
+            # row by row, read and insert data
+            for idx_code, row in df.iterrows():
+                if idx_code is None:
+                    continue
+                admin_div_num = int(idx_code)
+
+                # fill row_data
+                row_data = {}
+                for col_i, csv_value in enumerate(row):
+                    if col_keys[col_i] is None:
+                        continue
+
+                    value = str_to_int(csv_value)
+                    # insert data
+                    if data_type == 'P':
+                        gender_type = col_keys[col_i]['gender_type']
+                        if not (gender_type in row_data.keys()):
+                            row_data[gender_type] = {}
+
+                        age_type = col_keys[col_i]['age_type']
+                        if age_type not in row_data[gender_type].keys():
+                            row_data[gender_type][age_type] = value
+                        elif row_data[gender_type][age_type] != value:
+                            raise ValueError(f"Data contains duplicate values for '{gender_type}', '{age_type}': '{row_data[gender_type][age_type]}' vs '{value}'.")
+
+                    elif data_type in ['B', 'D']:
+                        gender_type = col_keys[col_i]['gender_type']
+                        if gender_type not in row_data.keys():
+                            row_data[gender_type] = value
+                        elif row_data[gender_type] != value:
+                            raise ValueError(f"Data contains duplicate values for '{gender_type}': '{row_data[gender_type]}' vs '{value}'.")
+
+                    elif data_type == 'H':
+                        household_type = col_keys[col_i]['household_type']
+                        if household_type not in row_data.keys():
+                            row_data[household_type] = value
+                        elif row_data[household_type] != value:
+                            raise ValueError(f"Data contains duplicate values for '{household_type}': '{row_data[household_type]}' vs '{value}'.")
+
+                    else:
+                        raise ValueError(f"Unknown data_type '{data_type}'.")
+
+                if data_type == 'P':
+                    for gender_type, gender_pyramid in row_data.items():
+                        new_data = {
+                            'resident_type': resident_type,
+                            'admin_div_num': admin_div_num,
+                            'year': fname_year,
+                            'month': fname_month,
+                            'gender_type': gender_type,
+                        }
+                        new_data.update(gender_pyramid)
+                        insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
+                        if insert_success:
+                            print(f">>> Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}', resident_type='{resident_type}', age_type='{age_type}'.")
+
+                elif data_type in ['B', 'D']:
+                    new_data = {
+                        'admin_div_num': admin_div_num,
+                        'year': fname_year,
+                        'month': fname_month,
+                        'total': row_data['T'],
+                        'male': row_data['M'],
+                        'female': row_data['F'],
+                    }
+                    insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
+                    if insert_success:
+                        print(f">>> Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+
+                elif data_type == 'H':
+                    new_data = {
+                        'resident_type': resident_type,
+                        'admin_div_num': admin_div_num,
+                        'year': fname_year,
+                        'month': fname_month,
+                    }
+                    new_data.update(row_data)
+                    insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
+                    if insert_success:
+                        print(f">>> Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+
+            pop_conn.commit()
+            print(f">>> File '{file_path.name}' has been inserted into '{data_type_table[data_type]}'.")
+            print()

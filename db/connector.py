@@ -2,6 +2,8 @@ import mariadb
 import sys
 from db import connector_info
 
+pop_db = 'kor_population'
+
 
 def db_connect(database: str):
     func_name = 'db_connect'

@@ -6,8 +6,8 @@ def list_to_select(column_list: list):
     if not column_list:
         return None
 
-    separator = ', '
-    select_str = separator.join(column_list)
+    separator = '`, `'
+    select_str = '`' + separator.join(column_list) + '`'
 
     return select_str
 

@@ -4,6 +4,25 @@ from db.connector import db_execute, db_executemany
 from db.query_str import list_to_select, dict_to_where
 
 
+def select_one_row_one_column(conn: mariadb.connection, db_table: str, unique_keys: dict, select_column: str):
+    func_name = 'select_one_row_one_column'
+
+    where_str = dict_to_where(unique_keys)
+    query = f"SELECT {select_column} FROM {db_table} WHERE {where_str}"
+    cur = conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if not rows:
+        return None
+    elif len(rows) != 1:
+        print(f">>> {func_name} -  DB Data Error: {unique_keys} is not unique in '{db_table}'.")
+        return None
+
+    value = rows[0][0]
+
+    return value
+
+
 def select_one_row(conn: mariadb.connection, db_table: str, unique_keys: dict, select_columns: list, return_col_descs=False):
     func_name = 'select_one_row'
 
@@ -38,9 +57,11 @@ def select_one_row(conn: mariadb.connection, db_table: str, unique_keys: dict, s
 
 def select_one_row_pack_into_dict(conn: mariadb.connection, db_table: str, unique_keys: dict, select_columns: list):
     (row, col_descs) = select_one_row(conn, db_table, unique_keys, select_columns, return_col_descs=True)
-
-    col_names = [col[0] for col in col_descs]
-    row_dict = dict(zip(col_names, row))
+    if row:
+        col_names = [col[0] for col in col_descs]
+        row_dict = dict(zip(col_names, row))
+    else:
+        row_dict = None
 
     return row_dict
 
