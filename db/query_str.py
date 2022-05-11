@@ -27,9 +27,9 @@ def dict_to_set(column_dict: dict, python_data_no=0):
             set_str += ', '
 
         if (i + 1) <= python_data_no:
-            set_str += f"{key}=?"
+            set_str += f"`{key}`=?"
         else:
-            set_str += f"{key}={python_data_to_sql_value(value)}"
+            set_str += f"`{key}`={python_data_to_sql_value(value)}"
 
     return set_str
 
@@ -39,7 +39,7 @@ def dict_to_where(column_dict: dict):
     for key, value in column_dict.items():
         if where_str:
             where_str += ' and '
-        where_str += f"{key}={python_data_to_sql_value(value)}"
+        where_str += f"`{key}`={python_data_to_sql_value(value)}"
 
     return where_str
 

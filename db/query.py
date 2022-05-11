@@ -8,7 +8,7 @@ def select_one_row_one_column(conn: mariadb.connection, db_table: str, unique_ke
     func_name = 'select_one_row_one_column'
 
     where_str = dict_to_where(unique_keys)
-    query = f"SELECT {select_column} FROM {db_table} WHERE {where_str}"
+    query = f"SELECT `{select_column}` FROM {db_table} WHERE {where_str}"
     cur = conn.cursor()
     db_execute(cur, query)
     rows = cur.fetchall()
