@@ -1,10 +1,5 @@
 from pandas import isna
 
-div_name_to_div_num = {'서울': 1100000000,
-                       '서울시': 1100000000,
-                       '서울특별시': 1100000000,
-                       }
-div_num_to_div_name = {1100000000: '서울특별시'}
 seoul_2020_12 = {
     0: {'M': 23202, 'F': 21961},
     1: {'M': 26272, 'F': 24204},
@@ -116,11 +111,13 @@ class Population(object):
         if isinstance(is_total_sum, bool):
             self.__is_total_sum = is_total_sum
         else:
-            raise ValueError(f"is_total_sum '{is_total_sum}' should be a boolean.")
+            error_msg = f"is_total_sum '{is_total_sum}' should be a boolean."
+            raise ValueError(error_msg)
         if isinstance(is_pos_only, bool):
             self.__is_pos_only = is_pos_only
         else:
-            raise ValueError(f"is_pos_only '{is_pos_only}' should be a boolean.")
+            error_msg = f"is_pos_only '{is_pos_only}' should be a boolean."
+            raise ValueError(error_msg)
         # declare class variables and insert with class methods
         self.__total = None
         self.__male = None
@@ -148,31 +145,37 @@ class Population(object):
         if self.__is_pos_only:
             if total_is_num:
                 if total < 0:
-                    raise ValueError(f"total '{total}' should be equal to or greater than 0.")
+                    error_msg = f"total '{total}' should be equal to or greater than 0."
+                    raise ValueError(error_msg)
             if male_is_num:
                 if male < 0:
-                    raise ValueError(f"male '{male}' should be equal to or greater than 0.")
+                    error_msg = f"male '{male}' should be equal to or greater than 0."
+                    raise ValueError(error_msg)
             if female_is_num:
                 if female < 0:
-                    raise ValueError(f"female '{female}' should be equal to or greater than 0.")
+                    error_msg = f"female '{female}' should be equal to or greater than 0."
+                    raise ValueError(error_msg)
         # insert values
         if self.__is_total_sum:
             if male_is_num and female_is_num:
                 if total_is_num:
                     if total != male + female:
-                        raise ValueError(f"male '{male}' and female '{female}' do not sum to total '{total}'.")
+                        error_msg = f"male '{male}' and female '{female}' do not sum to total '{total}'."
+                        raise ValueError(error_msg)
                 self.update_genders(male, female, sum_senior=sum_senior)
             elif total_is_num:
                 if male_is_num:
                     if total >= male:
                         self.update_genders(male, total - male, sum_senior=sum_senior)
                     else:
-                        raise ValueError(f"male '{male}' is greater than total '{total}'.")
+                        error_msg = f"male '{male}' is greater than total '{total}'."
+                        raise ValueError(error_msg)
                 elif female_is_num:
                     if total >= female:
                         self.update_genders(total - female, female, sum_senior=sum_senior)
                     else:
-                        raise ValueError(f"female '{female}' is greater than total '{total}'.")
+                        error_msg = f"female '{female}' is greater than total '{total}'."
+                        raise ValueError(error_msg)
                 else:
                     self.update_total(total, sum_senior=sum_senior)
             elif male_is_num:
@@ -198,10 +201,12 @@ class Population(object):
         # check and insert input: total
         if self.__is_pos_only:
             if is_pos_number(total) is False:
-                raise ValueError(f"total '{total}' is not a positive number.")
+                error_msg = f"total '{total}' is not a positive number."
+                raise ValueError(error_msg)
         else:
             if is_number(total) is False:
-                raise ValueError(f"total '{total}' is not a number.")
+                error_msg = f"total '{total}' is not a number."
+                raise ValueError(error_msg)
         # insert values
         self.__total = total
         if self.__is_total_sum:
@@ -241,10 +246,12 @@ class Population(object):
         # check and insert inputs: male, female
         if self.__is_pos_only:
             if is_pos_number(male) is False or is_pos_number(female) is False:
-                raise ValueError(f"male '{male}' and female '{female}' are not positive numbers.")
+                error_msg = f"male '{male}' and female '{female}' are not positive numbers."
+                raise ValueError(error_msg)
         else:
             if is_number(male) is False or is_number(female) is False:
-                raise ValueError(f"male '{male}' and female '{female}' are not numbers.")
+                error_msg = f"male '{male}' and female '{female}' are not numbers."
+                raise ValueError(error_msg)
         # insert values
         self.__male = male
         self.__female = female
@@ -258,10 +265,12 @@ class Population(object):
         # check and insert input: male
         if self.__is_pos_only:
             if not is_pos_number(male):
-                raise ValueError(f"male '{male}' is not a positive number.")
+                error_msg = f"male '{male}' is not a positive number."
+                raise ValueError(error_msg)
         else:
             if not is_number(male):
-                raise ValueError(f"male '{male}' is not a number.")
+                error_msg = f"male '{male}' is not a number."
+                raise ValueError(error_msg)
         self.__male = male
         if self.__is_total_sum:
             # delete total & female unless they agree with new male
@@ -294,10 +303,12 @@ class Population(object):
         # check and insert input: female
         if self.__is_pos_only:
             if not is_pos_number(female):
-                raise ValueError(f"female '{female}' is not a positive number.")
+                error_msg = f"female '{female}' is not a positive number."
+                raise ValueError(error_msg)
         else:
             if not is_number(female):
-                raise ValueError(f"female '{female}' is not a number.")
+                error_msg = f"female '{female}' is not a number."
+                raise ValueError(error_msg)
         self.__female = female
         if self.__is_total_sum:
             # delete total & male unless they agree with new female
@@ -359,15 +370,18 @@ class Pyramid(Population):
         if isinstance(stack_height, int):
             self.__age_range = stack_height
         else:
-            raise ValueError(f"stack_height '{stack_height}' should be an integer.")
+            error_msg = f"stack_height '{stack_height}' should be an integer."
+            raise ValueError(error_msg)
         if isinstance(num_stacks, int):
             self.__num_stacks = num_stacks
         else:
-            raise ValueError(f"num_stacks '{num_stacks}' should be an integer.")
+            error_msg = f"num_stacks '{num_stacks}' should be an integer."
+            raise ValueError(error_msg)
         if isinstance(max_age_layer, int):
             self.__max_age_layer = max_age_layer
         else:
-            raise ValueError(f"max_age_layer '{max_age_layer}' should be an integer.")
+            error_msg = f"max_age_layer '{max_age_layer}' should be an integer."
+            raise ValueError(error_msg)
         # declare class variables and insert values with class methods
         self.stacks = None
         self.__age_in_pyramid_idx = None
@@ -393,23 +407,29 @@ class Pyramid(Population):
 
         # check and insert input: age_range
         if not isinstance(age_range, int):
-            raise ValueError(f"age_range '{age_range}' is not an integer.")
+            error_msg = f"age_range '{age_range}' is not an integer."
+            raise ValueError(error_msg)
         elif age_range < 1:
-            raise ValueError(f"age_range '{age_range}' should be equal to or greater than 1.")
+            error_msg = f"age_range '{age_range}' should be equal to or greater than 1."
+            raise ValueError(error_msg)
         self.__age_range = age_range
         # check and insert input: num_stacks
         if not isinstance(num_stacks, int):
-            raise ValueError(f"num_stacks '{num_stacks}' is not an integer.")
+            error_msg = f"num_stacks '{num_stacks}' is not an integer."
+            raise ValueError(error_msg)
         elif num_stacks < 1:
-            raise ValueError(f"num_stacks '{num_stacks}' should be equal to or greater than 1.")
+            error_msg = f"num_stacks '{num_stacks}' should be equal to or greater than 1."
+            raise ValueError(error_msg)
         self.__num_stacks = num_stacks
         # check and insert input: max_age_layer
         if not isinstance(max_age_layer, int):
-            raise ValueError(f"max_age_layer '{max_age_layer}' is not an integer.")
+            error_msg = f"max_age_layer '{max_age_layer}' is not an integer."
+            raise ValueError(error_msg)
         else:
             max_age_layer_floor = age_range * (num_stacks - 1)
             if not max_age_layer >= max_age_layer_floor:
-                raise ValueError(f"max_age_layer '{max_age_layer}' should be equal to or greater than {max_age_layer_floor}.")
+                error_msg = f"max_age_layer '{max_age_layer}' should be equal to or greater than {max_age_layer_floor}."
+                raise ValueError(error_msg)
         self.__max_age_layer = max_age_layer
 
         # build stacks one by one
@@ -434,7 +454,8 @@ class Pyramid(Population):
 
     def sum_stacks(self):
         if not super().is_total_sum():
-            raise NotImplementedError("sum_stacks() is not available when is_total_sum() is False")
+            error_msg = "sum_stacks() is not available when is_total_sum() is False"
+            raise NotImplementedError(error_msg)
         total = 0
         male = 0
         female = 0
@@ -481,19 +502,23 @@ class Stack(Population):
         if isinstance(pyramid, Pyramid) or pyramid is None:
             self.__pyramid = pyramid
         else:
-            raise ValueError(f"pyramid '{pyramid}' should be a Pyramid or None.")
+            error_msg = f"pyramid '{pyramid}' should be a Pyramid or None."
+            raise ValueError(error_msg)
         if isinstance(min_age, int):
             self.__min_age = min_age
         else:
-            raise ValueError(f"min_age '{min_age}' should be an integer.")
+            error_msg = f"min_age '{min_age}' should be an integer."
+            raise ValueError(error_msg)
         if isinstance(max_age, int):
             self.__max_age = max_age
         else:
-            raise ValueError(f"max_age '{max_age}' should be an integer.")
+            error_msg = f"max_age '{max_age}' should be an integer."
+            raise ValueError(error_msg)
         if isinstance(is_last_stack, bool):
             self.__is_last_stack = is_last_stack
         else:
-            raise ValueError(f"is_last_stack '{is_last_stack}' should be a boolean.")
+            error_msg = f"is_last_stack '{is_last_stack}' should be a boolean."
+            raise ValueError(error_msg)
         # declare class variables and insert values with class methods
         self.age_layers = None
         self.build_age_layers(age_data=age_data)
@@ -525,19 +550,24 @@ class Stack(Population):
 
         # check and insert input: min_age
         if not isinstance(min_age, int):
-            raise ValueError(f"min_age '{min_age}' is not an integer.")
+            error_msg = f"min_age '{min_age}' is not an integer."
+            raise ValueError(error_msg)
         elif min_age < 0:
-            raise ValueError(f"min_age '{min_age}' should be equal to or greater than 0.")
+            error_msg = f"min_age '{min_age}' should be equal to or greater than 0."
+            raise ValueError(error_msg)
         self.__min_age = min_age
         # check and insert input: max_age
         if not isinstance(max_age, int):
-            raise ValueError(f"max_age '{max_age}' is not an integer.")
+            error_msg = f"max_age '{max_age}' is not an integer."
+            raise ValueError(error_msg)
         elif max_age < min_age:
-            raise ValueError(f"max_age '{max_age}' should be equal to or greater than min_age '{min_age}'.")
+            error_msg = f"max_age '{max_age}' should be equal to or greater than min_age '{min_age}'."
+            raise ValueError(error_msg)
         self.__max_age = max_age
         # check and insert input: is_last_stack
         if not isinstance(is_last_stack, bool):
-            raise ValueError(f"is_last_stack '{is_last_stack}' is not a boolean.")
+            error_msg = f"is_last_stack '{is_last_stack}' is not a boolean."
+            raise ValueError(error_msg)
         self.__is_last_stack = is_last_stack
 
         # build layers one by one
@@ -569,7 +599,8 @@ class Stack(Population):
 
     def sum_age_layers(self, sum_stacks=True):
         if not super().is_total_sum():
-            raise NotImplementedError("sum_ages() is not available when is_total_sum() is False")
+            error_msg = "sum_ages() is not available when is_total_sum() is False"
+            raise NotImplementedError(error_msg)
         old_total = super().get_total()
         old_male = super().get_male()
         old_female = super().get_female()
@@ -621,15 +652,18 @@ class AgeLayer(Population):
         if isinstance(stack, Stack):
             self.__stack = stack
         else:
-            raise ValueError(f"stack '{stack}' should be a Stack.")
+            error_msg = f"stack '{stack}' should be a Stack."
+            raise ValueError(error_msg)
         if isinstance(age, int):
             self.__age = age
         else:
-            raise ValueError(f"age '{age}' should be an integer.")
+            error_msg = f"age '{age}' should be an integer."
+            raise ValueError(error_msg)
         if isinstance(is_last_layer, bool):
             self.__last_age = is_last_layer
         else:
-            raise ValueError(f"is_last_layer '{is_last_layer}' should be a boolean.")
+            error_msg = f"is_last_layer '{is_last_layer}' should be a boolean."
+            raise ValueError(error_msg)
         return
 
     def __repr__(self):
@@ -676,7 +710,8 @@ def str_to_int(input_str: str):
     elif input_str is None or isna(input_str):
         output_int = None
     else:
-        raise ValueError(f">>> input_str '{input_str}' is not a string.")
+        error_msg = f"input_str '{input_str}' is not a string."
+        raise ValueError(error_msg)
 
     return output_int
 

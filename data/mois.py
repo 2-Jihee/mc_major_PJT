@@ -321,15 +321,18 @@ resident_type_to_col_name = {
 
 def get_data_name(data_type: str, resident_type=None):
     if data_type not in data_type_desc.keys():
-        raise ValueError(f">>> Input data_type '{data_type}' is invalid.")
+        error_msg = f"data_type '{data_type}' is invalid."
+        raise ValueError(error_msg)
     data_name = data_type_desc[data_type]
     if resident_type is not None:
         if resident_type not in resident_type_dict.keys():
-            raise ValueError(f">>> Input resident_type '{resident_type}' is invalid.")
+            error_msg = f"resident_type '{resident_type}' is invalid."
+            raise ValueError(error_msg)
         data_name += f"_{resident_type_dict[resident_type]}"
 
     if data_name not in data_name_list:
-        raise ValueError(f">>> Invalid input combination: data_type '{data_type}' and resident_type '{resident_type}' are not compatible.")
+        error_msg = f"data_type '{data_type}' and resident_type '{resident_type}' are not compatible."
+        raise ValueError(error_msg)
 
     return data_name
 
@@ -363,7 +366,7 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
                 slt_org_lvl2 = 'A'
             else:
                 if data_type != 'P' and is_detail_data is False:
-                    print(f">>> admin_div_code '{admin_div_code}' is not available with data_type '{data_type}' when is_detail_data is False.")
+                    print(f"  > admin_div_code '{admin_div_code}' is not available with data_type '{data_type}' when is_detail_data is False.")
                     continue
                 slt_org_lvl1 = jr_admin_div_code_dict[admin_div_code]
                 slt_org_lvl2 = admin_div_code
@@ -388,7 +391,8 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
                 referer = 'https://jumin.mois.go.kr/etcStatHouseholds.do'
                 category = 'households'
             else:
-                raise ValueError(f">>> Input data_type '{data_type}' is invalid.")
+                error_msg = f"data_type '{data_type}' is invalid."
+                raise ValueError(error_msg)
         headers = {
             'accept-language': 'ko,en;q=0.9,ko-KR;q=0.8',
             'host': 'jumin.mois.go.kr',
@@ -445,7 +449,7 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
                 with codecs.open(file_path.as_posix(), mode='x', encoding=save_encoding) as file:
                     file.write(decoded_content)
                 cnt_per_admin_div += 1
-                print(f">>> Saved '{fname}' under '{dir_path}'.")
+                print(f"  > Saved '{fname}' under '{dir_path}'.")
                 if is_detail_data:
                     sleep(30)
                 else:
@@ -519,6 +523,7 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
         dir_path = get_dir_path(admin_div_code, data_name, is_detail_data)
         if not dir_path.exists():
             print(f">>> Directory '{dir_path}' does not exist for data_name '{data_name}' and admin_div_code '{admin_div_code}'.")
+            print()
             continue
 
         fname_patt_str = fr"{admin_div_code}_(?P<year>\d+)_(?P<month>\d+)_{data_name}{'_detail' if is_detail_data else ''}.csv"
@@ -570,37 +575,41 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                         senior_admin_div_num = int(''.join(admin_div_code_parts))
                         senior_admin_div_name_full = select_one_row_one_column(pop_conn, admin_div_table, {'admin_div_num': senior_admin_div_num}, 'name_full')
                         if senior_admin_div_name_full is None:
-                            raise ValueError(f"Unable to identify senior_admin_div_num for a new admin_div '{admin_div_name}' with admin_div_num '{admin_div_num}'.")
+                            error_msg = f"Unable to identify senior_admin_div_num for a new admin_div '{admin_div_name}' with admin_div_num '{admin_div_num}'."
+                            raise ValueError(error_msg)
                     insert_dict(pop_conn, admin_div_table, {'admin_div_num': admin_div_num, 'name_full': admin_div_name, 'name': admin_div_name_split[-1], 'admin_div_level': admin_div_level, 'senior_admin_div_num': senior_admin_div_num})
                     pop_conn.commit()
                 new_index.append(admin_div_code)
             df.index = new_index
 
-            # check resident_type of data
-            csv_resident_type = None
-            for key, value in resident_type_to_col_name.items():
-                if re.search(value, df.columns[0]):
-                    csv_resident_type = key
-                    break
-            if data_type in ['P', 'H'] and csv_resident_type is None:
-                csv_resident_type = '-'
-            if not csv_resident_type == resident_type:
-                print(f">>> File '{file_path.name}' contains data with resident_type '{csv_resident_type}', which is different from the provided resident_type '{resident_type}'.")
-                continue
-
             # columns to keys
             col_keys = []
             for col_name in df.columns:
-                csv_col_split = col_name.split('_')
+                # check resident_type of data
+                col_resident_type = None
+                for key, value in resident_type_to_col_name.items():
+                    if value in col_name:
+                        col_resident_type = key
+                        break
+                if data_type in ['P', 'H'] and col_resident_type is None:
+                    col_resident_type = '-'
+                if col_resident_type != resident_type:
+                    error_msg = f"File '{file_path.name}' contains data column '{col_name}' with resident_type '{col_resident_type}'."
+                    raise ValueError(error_msg)
+
+                # split col_name for getting date and data types
+                col_name_split = col_name.split('_')
 
                 # determine date: year/month
-                date_match = date_patt.search(csv_col_split[0])
+                date_match = date_patt.search(col_name_split[0])
                 col_year = int(date_match.group('year'))
                 if col_year != fname_year:
-                    raise ValueError(f"Warning: year '{fname_year}' in filename is different from year '{col_year}' in csv column '{col_name}'.")
+                    error_msg = f"year '{fname_year}' in filename is different from year '{col_year}' in data column '{col_name}'."
+                    raise ValueError(error_msg)
                 col_month = int(date_match.group('month'))
                 if col_month != fname_month:
-                    raise ValueError(f"Warning: month '{fname_month}' in filename is different from month '{col_month}' in csv column '{col_name}'.")
+                    error_msg = f"month '{fname_month}' in filename is different from month '{col_month}' in data column '{col_name}'."
+                    raise ValueError(error_msg)
 
                 # get column types
                 if data_type == 'P':
@@ -610,54 +619,59 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                         continue
 
                     # determine gender_type
-                    if csv_col_split[1] == '남':
+                    if col_name_split[1] == '남':
                         gender_type = 'M'
-                    elif csv_col_split[1] == '여':
+                    elif col_name_split[1] == '여':
                         gender_type = 'F'
-                    elif csv_col_split[1] == '계' or csv_col_split[1] in resident_type_to_col_name.values():
+                    elif col_name_split[1] == '계' or col_name_split[1] in resident_type_to_col_name.values():
                         gender_type = 'T'
                     else:
-                        raise ValueError(f"Unknown gender_type in csv column '{col_name}'.")
+                        error_msg = f"Unknown gender_type in data column '{col_name}'."
+                        raise ValueError(error_msg)
 
                     # determine age type
-                    if csv_col_split[-1] == '총인구수':
+                    if col_name_split[-1] == '총인구수':
                         age_type = 'age_total'
                     else:
-                        last_age_match = last_age_patt.search(csv_col_split[-1])
-                        age_match = age_patt.search(csv_col_split[-1])
+                        last_age_match = last_age_patt.search(col_name_split[-1])
+                        age_match = age_patt.search(col_name_split[-1])
                         if last_age_match:
                             age_type = f"age_{int(last_age_match.group('last_age'))}+"
                         elif age_match:
                             age_type = f"age_{int(age_match.group('age'))}"
                         else:
-                            raise ValueError(f"Unknown age_type in csv column '{col_name}'.")
+                            error_msg = f"Unknown age_type in data column '{col_name}'."
+                            raise ValueError(error_msg)
 
                     col_keys.append({'age_type': age_type, 'gender_type': gender_type})
 
                 elif data_type in ['B', 'D']:
                     # get gender_type
-                    if '남자' in csv_col_split[1]:
+                    if '남자' in col_name_split[1]:
                         gender_type = 'M'
-                    elif '여자' in csv_col_split[1]:
+                    elif '여자' in col_name_split[1]:
                         gender_type = 'F'
-                    elif '계' in csv_col_split[1]:
+                    elif '계' in col_name_split[1]:
                         gender_type = 'T'
                     else:
-                        raise ValueError(f"Unknown gender_type in csv column '{col_name}'.")
+                        error_msg = f"Unknown gender_type in data column '{col_name}'."
+                        raise ValueError(error_msg)
 
                     col_keys.append({'gender_type': gender_type})
 
                 elif data_type == 'H':
-                    if '세대' not in csv_col_split[-1]:
-                        raise ValueError(f"csv column '{col_name}' does not indicate 'household' data.")
+                    if '세대' not in col_name_split[-1]:
+                        error_msg = f"data column '{col_name}' does not indicate 'household' data."
+                        raise ValueError(error_msg)
 
                     # get household_type
-                    if '전체' in csv_col_split[-1]:
+                    if '전체' in col_name_split[-1]:
                         household_type = 'size_total'
                     else:
-                        household_match = household_patt.search(csv_col_split[-1])
+                        household_match = household_patt.search(col_name_split[-1])
                         if not household_match:
-                            raise ValueError(f"Unknown household_type in data column '{col_name}'.")
+                            error_msg = f"Unknown household_type in data column '{col_name}'."
+                            raise ValueError(error_msg)
                         household_size = int(household_match.group('household_size'))
                         household_type = f"size_{household_size}"
 
@@ -686,24 +700,28 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                         if age_type not in row_data[gender_type].keys():
                             row_data[gender_type][age_type] = value
                         elif row_data[gender_type][age_type] != value:
-                            raise ValueError(f"Data contains duplicate values for '{gender_type}', '{age_type}': '{row_data[gender_type][age_type]}' vs '{value}'.")
+                            error_msg = f"Data contains duplicate values for '{gender_type}', '{age_type}': '{row_data[gender_type][age_type]}' vs '{value}'."
+                            raise ValueError(error_msg)
 
                     elif data_type in ['B', 'D']:
                         gender_type = col_keys[col_i]['gender_type']
                         if gender_type not in row_data.keys():
                             row_data[gender_type] = value
                         elif row_data[gender_type] != value:
-                            raise ValueError(f"Data contains duplicate values for '{gender_type}': '{row_data[gender_type]}' vs '{value}'.")
+                            error_msg = f"Data contains duplicate values for '{gender_type}': '{row_data[gender_type]}' vs '{value}'."
+                            raise ValueError(error_msg)
 
                     elif data_type == 'H':
                         household_type = col_keys[col_i]['household_type']
                         if household_type not in row_data.keys():
                             row_data[household_type] = value
                         elif row_data[household_type] != value:
-                            raise ValueError(f"Data contains duplicate values for '{household_type}': '{row_data[household_type]}' vs '{value}'.")
+                            error_msg = f"Data contains duplicate values for '{household_type}': '{row_data[household_type]}' vs '{value}'."
+                            raise ValueError(error_msg)
 
                     else:
-                        raise ValueError(f"Unknown data_type '{data_type}'.")
+                        error_msg = f"Unknown data_type '{data_type}'."
+                        raise ValueError(error_msg)
 
                 if data_type == 'P':
                     for gender_type, gender_pyramid in row_data.items():
@@ -717,7 +735,7 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                         new_data.update(gender_pyramid)
                         insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
                         if insert_success:
-                            print(f">>> Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}', resident_type='{resident_type}', age_type='{age_type}'.")
+                            print(f"  > Inserted into '{data_type_table[data_type]}': resident_type='{resident_type}', admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}', gender_type='{gender_type}'.")
 
                 elif data_type in ['B', 'D']:
                     new_data = {
@@ -730,7 +748,7 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                     }
                     insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
                     if insert_success:
-                        print(f">>> Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+                        print(f"  > Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
 
                 elif data_type == 'H':
                     new_data = {
@@ -742,8 +760,8 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                     new_data.update(row_data)
                     insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
                     if insert_success:
-                        print(f">>> Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+                        print(f"  > Inserted into '{data_type_table[data_type]}': resident_type='{resident_type}', admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
 
             pop_conn.commit()
-            print(f">>> File '{file_path.name}' has been inserted into '{data_type_table[data_type]}'.")
+            print(f">>> File '{file_path.name}' has been uploaded into '{data_type_table[data_type]}'.")
             print()
