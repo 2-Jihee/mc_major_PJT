@@ -1,5 +1,4 @@
-import pandas as pd
-import numpy as np
+from pandas import isna
 
 div_name_to_div_num = {'서울': 1100000000,
                        '서울시': 1100000000,
@@ -113,13 +112,19 @@ seoul_2020_12 = {
 
 class Population(object):
     def __init__(self, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
-        # declare class variables
-        self.__is_total_sum = is_total_sum
-        self.__is_pos_only = is_pos_only
+        # declare class variables and insert values
+        if isinstance(is_total_sum, bool):
+            self.__is_total_sum = is_total_sum
+        else:
+            raise ValueError(f"is_total_sum '{is_total_sum}' should be a boolean.")
+        if isinstance(is_pos_only, bool):
+            self.__is_pos_only = is_pos_only
+        else:
+            raise ValueError(f"is_pos_only '{is_pos_only}' should be a boolean.")
+        # declare class variables and insert with class methods
         self.__total = None
         self.__male = None
         self.__female = None
-        # insert values into class variables
         self.update(total=total, male=male, female=female, sum_senior=False)
         return
 
@@ -127,7 +132,9 @@ class Population(object):
         if not self.is_total_sum():
             raise NotImplementedError("sum_senior_pop() is not available when is_total_sum() is False")
         if isinstance(self, Stack):
-            self.get_pyramid().sum_stacks()
+            pyramid = self.get_pyramid()
+            if pyramid:
+                pyramid.sum_stacks()
         elif isinstance(self, AgeLayer):
             self.get_stack().sum_age_layers()
         return
@@ -346,15 +353,24 @@ class Population(object):
 
 
 class Pyramid(Population):
-    def __init__(self, age_range=5, num_stacks=17, max_age_layer=100, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
+    def __init__(self, stack_height=5, num_stacks=17, max_age_layer=100, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
         super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
-        # declare class variables
-        self.__age_range = age_range
-        self.__num_stacks = num_stacks
-        self.__max_age_layer = max_age_layer
+        # declare class variables and insert values
+        if isinstance(stack_height, int):
+            self.__age_range = stack_height
+        else:
+            raise ValueError(f"stack_height '{stack_height}' should be an integer.")
+        if isinstance(num_stacks, int):
+            self.__num_stacks = num_stacks
+        else:
+            raise ValueError(f"num_stacks '{num_stacks}' should be an integer.")
+        if isinstance(max_age_layer, int):
+            self.__max_age_layer = max_age_layer
+        else:
+            raise ValueError(f"max_age_layer '{max_age_layer}' should be an integer.")
+        # declare class variables and insert values with class methods
         self.stacks = None
         self.__age_in_pyramid_idx = None
-        # insert values into class variables
         self.build_stacks(age_data=age_data)
         return
 
@@ -362,9 +378,9 @@ class Pyramid(Population):
         min_len = 7
         return f'[ Total: {int_to_str(super().get_total(), min_len)},    M: {int_to_str(super().get_male(), min_len)},    F: {int_to_str(super().get_female(), min_len)} ]'
 
-    def __getitem__(self, age):
+    def __getitem__(self, age: int):
         (stack_idx, age_idx) = self.__age_in_pyramid_idx[age]
-        return self.stacks[stack_idx].ages[age_idx]
+        return self.stacks[stack_idx].age_layers[age_idx]
 
     def build_stacks(self, age_range=None, num_stacks=None, max_age_layer=None, age_data=None):
         # default inputs
@@ -400,12 +416,14 @@ class Pyramid(Population):
         stacks = []
         age_to_stack = {}
         for i in range(num_stacks):
+            min_age = i * age_range
             if i < num_stacks - 1:
-                stack = Stack(self, i * age_range, (i + 1) * age_range - 1, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), age_data=age_data)
-                age_dict = {age: [i, j] for j, age in enumerate(range(i * age_range, (i + 1) * age_range))}
+                max_age = (i + 1) * age_range - 1
+                stack = Stack(pyramid=self, min_age=min_age, max_age=max_age, is_last_stack=False, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), age_data=age_data)
+                age_dict = {age: [i, j] for j, age in enumerate(range(min_age, max_age + 1))}
             else:
-                stack = Stack(self, i * age_range, max_age_layer, is_last_stack=True, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), age_data=age_data)
-                age_dict = {age: [i, j] for j, age in enumerate(range(i * age_range, max_age_layer + 1))}
+                stack = Stack(pyramid=self, min_age=min_age, max_age=max_age_layer, is_last_stack=True, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), age_data=age_data)
+                age_dict = {age: [i, j] for j, age in enumerate(range(min_age, max_age_layer + 1))}
             stacks.append(stack)
             age_to_stack.update(age_dict)
         self.stacks = tuple(stacks)
@@ -455,26 +473,29 @@ class Pyramid(Population):
             return False
         return True
 
-    def update_age_layers(self, age_data):
-        for age, pop_data in age_data.items():
-            if not self.is_age_valid(age):
-                raise ValueError(f"age '{age}' is not valid.")
-            (total, male, female) = get_pop_data_from_dict(pop_data)
-            (stack_idx, age_idx) = self.__age_in_pyramid_idx[age]
-            self.stacks[stack_idx].ages[age_idx].update(total=total, male=male, female=female)
-        return
-
 
 class Stack(Population):
-    def __init__(self, pyramid: Pyramid, min_age: int, max_age: int, is_last_stack=False, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
+    def __init__(self, pyramid=None, min_age=0, max_age=100, is_last_stack=True, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
         super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
-        # declare class variables
-        self.__pyramid = pyramid
-        self.__min_age = min_age
-        self.__max_age = max_age
-        self.__is_last_stack = is_last_stack
-        self.ages = None
-        # insert values into class variables
+        # declare class variables and insert values
+        if isinstance(pyramid, Pyramid) or pyramid is None:
+            self.__pyramid = pyramid
+        else:
+            raise ValueError(f"pyramid '{pyramid}' should be a Pyramid or None.")
+        if isinstance(min_age, int):
+            self.__min_age = min_age
+        else:
+            raise ValueError(f"min_age '{min_age}' should be an integer.")
+        if isinstance(max_age, int):
+            self.__max_age = max_age
+        else:
+            raise ValueError(f"max_age '{max_age}' should be an integer.")
+        if isinstance(is_last_stack, bool):
+            self.__is_last_stack = is_last_stack
+        else:
+            raise ValueError(f"is_last_stack '{is_last_stack}' should be a boolean.")
+        # declare class variables and insert values with class methods
+        self.age_layers = None
         self.build_age_layers(age_data=age_data)
         return
 
@@ -486,6 +507,9 @@ class Stack(Population):
         else:
             age_str += f'-{self.__max_age:>2}'
         return f'{age_str}:  [ Total: {int_to_str(super().get_total(), min_len)},    M: {int_to_str(super().get_male(), min_len)},    F: {int_to_str(super().get_female(), min_len)} ]'
+
+    def __getitem__(self, age_idx: int):
+        return self.age_layers[age_idx]
 
     def get_pyramid(self):
         return self.__pyramid
@@ -520,9 +544,9 @@ class Stack(Population):
         ages = []
         for age in range(min_age, max_age + 1):
             if age == max_age:
-                last_age = is_last_stack
+                is_last_layer = is_last_stack
             else:
-                last_age = False
+                is_last_layer = False
 
             if age_data:
                 if age in age_data.keys():
@@ -536,9 +560,9 @@ class Stack(Population):
                 male = None
                 female = None
 
-            age_layer = AgeLayer(self, age, last_age=last_age, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), total=total, male=male, female=female)
+            age_layer = AgeLayer(self, age, is_last_layer=is_last_layer, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), total=total, male=male, female=female)
             ages.append(age_layer)
-        self.ages = tuple(ages)
+        self.age_layers = tuple(ages)
         if super().is_total_sum():
             self.sum_age_layers(sum_stacks=False)
         return
@@ -555,7 +579,7 @@ class Stack(Population):
         female = 0
         sum_total = True
         sum_gender = True
-        for age in self.ages:
+        for age in self.age_layers:
             t = age.get_total()
             m = age.get_male()
             f = age.get_female()
@@ -580,21 +604,32 @@ class Stack(Population):
         elif sum_total:
             super().update_total(total, sum_senior=False)
 
-        if super().is_total_sum() and sum_stacks:
+        pyramid = self.get_pyramid()
+        if pyramid and super().is_total_sum() and sum_stacks:
             new_total = super().get_total()
             new_male = super().get_male()
             new_female = super().get_female()
             if (old_total != new_total) or (old_male != new_male) or (old_female != new_female):
-                self.__pyramid.sum_stacks()
+                pyramid.sum_stacks()
         return
 
 
 class AgeLayer(Population):
-    def __init__(self, stack: Stack, age: int, last_age=False, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
+    def __init__(self, stack: Stack, age: int, is_last_layer=True, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
         super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
-        self.__stack = stack
-        self.__age = age
-        self.__last_age = last_age
+        # declare class variables and insert values
+        if isinstance(stack, Stack):
+            self.__stack = stack
+        else:
+            raise ValueError(f"stack '{stack}' should be a Stack.")
+        if isinstance(age, int):
+            self.__age = age
+        else:
+            raise ValueError(f"age '{age}' should be an integer.")
+        if isinstance(is_last_layer, bool):
+            self.__last_age = is_last_layer
+        else:
+            raise ValueError(f"is_last_layer '{is_last_layer}' should be a boolean.")
         return
 
     def __repr__(self):
@@ -630,6 +665,20 @@ def int_to_str(input_int: int, min_len=0):
         output_str = 'N/A'
     output_str = output_str.rjust(min_len, ' ')
     return output_str
+
+
+def str_to_int(input_str: str):
+    if isinstance(input_str, str):
+        output_str = input_str.replace(',', '')
+        output_int = int(output_str)
+    elif isinstance(input_str, int):
+        output_int = input_str
+    elif input_str is None or isna(input_str):
+        output_int = None
+    else:
+        raise ValueError(f">>> input_str '{input_str}' is not a string.")
+
+    return output_int
 
 
 def is_number(input_num):
