@@ -12,6 +12,24 @@ def list_to_select(column_list: list):
     return select_str
 
 
+def list_to_values(python_values: list):
+    sql_values = list(map(python_data_to_sql_value, python_values))
+    separator = ', '
+    values_str = separator.join(sql_values)
+
+    return values_str
+
+
+def dict_to_where(column_dict: dict):
+    where_str = ''
+    for key, value in column_dict.items():
+        if where_str:
+            where_str += ' and '
+        where_str += f"`{key}`={python_data_to_sql_value(value)}"
+
+    return where_str
+
+
 def dict_to_set(column_dict: dict, python_data_no=0):
     func_name = 'dict_to_set'
 
@@ -32,24 +50,6 @@ def dict_to_set(column_dict: dict, python_data_no=0):
             set_str += f"`{key}`={python_data_to_sql_value(value)}"
 
     return set_str
-
-
-def dict_to_where(column_dict: dict):
-    where_str = ''
-    for key, value in column_dict.items():
-        if where_str:
-            where_str += ' and '
-        where_str += f"`{key}`={python_data_to_sql_value(value)}"
-
-    return where_str
-
-
-def list_to_values(python_values: list):
-    sql_values = list(map(python_data_to_sql_value, python_values))
-    separator = ', '
-    values_str = separator.join(sql_values)
-
-    return values_str
 
 
 def python_data_to_sql_value(python_data):

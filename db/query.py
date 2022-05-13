@@ -4,11 +4,25 @@ from db.connector import db_execute, db_executemany
 from db.query_str import list_to_select, dict_to_where
 
 
+def select_one_column(conn: mariadb.connection, db_table: str, keys: dict, select_column: str):
+    where_str = dict_to_where(keys)
+    query = f"SELECT `{select_column}` FROM `{db_table}` WHERE {where_str} and `{select_column}` IS NOT NULL"
+    cur = conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if not rows:
+        return None
+
+    values = [row[0] for row in rows]
+
+    return values
+
+
 def select_one_row_one_column(conn: mariadb.connection, db_table: str, unique_keys: dict, select_column: str):
     func_name = 'select_one_row_one_column'
 
     where_str = dict_to_where(unique_keys)
-    query = f"SELECT `{select_column}` FROM {db_table} WHERE {where_str}"
+    query = f"SELECT `{select_column}` FROM `{db_table}` WHERE {where_str}"
     cur = conn.cursor()
     db_execute(cur, query)
     rows = cur.fetchall()
@@ -33,7 +47,7 @@ def select_one_row(conn: mariadb.connection, db_table: str, unique_keys: dict, s
 
     where_str = dict_to_where(unique_keys)
 
-    query = f"SELECT {select_str} FROM {db_table} WHERE {where_str}"
+    query = f"SELECT {select_str} FROM `{db_table}` WHERE {where_str}"
     cur = conn.cursor()
     db_execute(cur, query)
     rows = cur.fetchall()
@@ -71,7 +85,7 @@ def insert_dict(conn: mariadb.connection, db_table: str, new_data: dict):
     placeholder_str = ", ".join(['?'] * len(new_data))
     insert_data = tuple(new_data.values())
 
-    query = f"INSERT INTO {db_table} ({select_str}) VALUES ({placeholder_str})"
+    query = f"INSERT INTO `{db_table}` ({select_str}) VALUES ({placeholder_str})"
     cur = conn.cursor()
     insert_success = db_execute(cur, query, python_data=insert_data)
 

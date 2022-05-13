@@ -8,20 +8,18 @@ from natsort import natsorted
 from time import sleep
 
 from data.data_loc import data_dir
-from db.connector import pop_db, db_connect
+from db.connector import pop_db, admin_div_table, db_connect
 from db.query import select_one_row_one_column, insert_dict
 from pop.model import str_to_int
 
+source_name = 'mois'
 resp_encoding = 'ansi'
 save_encoding = 'utf-8'
-source_name = 'mois'
 
 date_patt_str = r'(?P<year>\d+)년\W*(?P<month>\d+)월'
 household_patt_str = r'(?P<household_size>\d+)인세대'
 last_age_patt_str = r'(?P<last_age>\d+)세\W*이상'
 age_patt_str = r'(?P<age>\d+)세'
-
-admin_div_table = 'admin_division'
 
 admin_div_code_list = [
     '0000000000',
@@ -418,9 +416,9 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
                     'sltOrgLvl2': slt_org_lvl2,                   # A: 모든 시군구)  /  시군구 코
                     'category': category,                       # 데이터 유형 - year, month, birth, death, households
                     'searchYearStart': str(year),
-                    'searchMonthStart': f'{month:02}',
+                    'searchMonthStart': f'{month:0>2}',
                     'searchYearEnd': str(year),
-                    'searchMonthEnd': f'{month:02}',
+                    'searchMonthEnd': f'{month:0>2}',
                     'sltOrderType': '1',                        # 데이터 정렬 기준
                     'sltOrderValue': 'ASC',                     # 데이터 정렬 방식 - ASC
                 }
