@@ -359,7 +359,7 @@ def get_mois_data(admin_div_codes: list, data_type: str, resident_type=None, is_
             slt_org_lvl2 = 'A'
         else:
             slt_org_type = '2'
-            if admin_div_code[2:] == '0' * (len(admin_div_code) - 2):
+            if admin_div_code[2:] == '0'*len(admin_div_code[2:]):
                 slt_org_lvl1 = admin_div_code
                 slt_org_lvl2 = 'A'
             else:

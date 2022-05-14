@@ -5,6 +5,7 @@ from db import connector_info
 pop_db = 'kor_population'
 admin_div_table = 'admin_division'
 
+
 def db_connect(database: str):
     func_name = 'db_connect'
     # connection information in db.connector_info

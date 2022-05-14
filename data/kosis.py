@@ -6,13 +6,23 @@ from time import sleep
 
 from data.data_loc import data_dir
 from db.connector import pop_db, admin_div_table, db_connect, db_execute
+from db.query import select_one_row_one_column
 from db.query_str import list_to_values
 
 source_name = 'kosis'
 resp_encoding = 'ansi'
 save_encoding = 'utf-8'
 
-log_seq = '130588136'                                   # 하루에 한번은 갱신된 값을 입력할 것을 권고
+log_seq = '130652195'  # 신규 다운로드 시 갱신된 값을 입력할 것
+# 130628071
+# 130628129
+# 130637926
+# 130640473
+# 130642570
+# 130642872
+# 130646172
+# 130646772
+# 130648398
 
 url_make = 'https://kosis.kr/statHtml/downGrid.do'
 url_down = 'https://kosis.kr/statHtml/downNormal.do'
@@ -52,6 +62,175 @@ headers = {
 }
 
 
+def get_admin_div_n2_codes_level_0_and_1(admin_div_nums: list, year: int, pop_conn=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    if admin_div_nums:
+        query = f"SELECT SUBSTRING(CONVERT(`admin_div_num`, CHAR), 1, 2) FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
+                f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
+    else:
+        query = f"SELECT SUBSTRING(CONVERT(`admin_div_num`, CHAR), 1, 2) FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
+    cur = pop_conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if rows:
+        admin_div_n2_codes = [row[0] for row in rows]
+    else:
+        admin_div_n2_codes = None
+
+    return admin_div_n2_codes
+
+
+def get_admin_div_n5_codes_level_0_and_1(admin_div_nums: list, year: int, pop_conn=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    if admin_div_nums:
+        query = f"SELECT SUBSTRING(CONVERT(`admin_div_num`, CHAR), 1, 5) FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
+                f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
+    else:
+        query = f"SELECT SUBSTRING(CONVERT(`admin_div_num`, CHAR), 1, 5) FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
+    cur = pop_conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if rows:
+        admin_div_n5_codes = [row[0] for row in rows]
+    else:
+        admin_div_n5_codes = None
+
+    return admin_div_n5_codes
+
+
+def get_kosis_admin_div_codes_level_0_and_1(admin_div_nums: list, year: int, pop_conn=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    if admin_div_nums:
+        query = f"SELECT `kosis_admin_div_code` FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
+                f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year}) " \
+                f"ORDER BY `admin_div_num`"
+    else:
+        query = f"SELECT `kosis_admin_div_code` FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year}) " \
+                f"ORDER BY `admin_div_num`"
+    cur = pop_conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if rows:
+        kosis_admin_div_codes = [row[0] for row in rows]
+    else:
+        kosis_admin_div_codes = None
+
+    return kosis_admin_div_codes
+
+
+def get_admin_div_nums_and_kosis_codes_level_0_and_1(admin_div_nums: list, year: int, pop_conn=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    if admin_div_nums:
+        query = f"SELECT `admin_div_num`, `kosis_admin_div_code` FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
+                f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year}) " \
+                f"ORDER BY `admin_div_num`"
+    else:
+        query = f"SELECT `admin_div_num`, `kosis_admin_div_code` FROM `{admin_div_table}` " \
+                f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year}) " \
+                f"ORDER BY `admin_div_num`"
+    cur = pop_conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if rows:
+        admin_div_nums_and_codes = rows
+    else:
+        admin_div_nums_and_codes = None
+
+    return admin_div_nums_and_codes
+
+
+def convert_admin_div_num_to_admin_div_n5_code(admin_div_num: int):
+    if admin_div_num % 100000 == 0:
+        admin_div_n5_code = str(int(admin_div_num / 100000)).rjust(5, '0')
+    else:
+        admin_div_n5_code = None
+
+    return admin_div_n5_code
+
+
+def convert_admin_div_n5_code_to_admin_div_num(admin_div_n5_code: str):
+    admin_div_n10_code = admin_div_n5_code.ljust(10, '0')
+    admin_div_num = int(admin_div_n10_code)
+
+    return admin_div_num
+
+
+def convert_admin_div_n5_code_to_admin_div_code(admin_div_n5_code: str):
+    admin_div_code = admin_div_n5_code[:2] if admin_div_n5_code[2:] == '0' * len(admin_div_n5_code[2:]) else admin_div_n5_code
+
+    return admin_div_code
+
+
+def get_jr_admin_div_n5_codes(admin_div_n5_code: str, year: int, pop_conn=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    admin_div_num = convert_admin_div_n5_code_to_admin_div_num(admin_div_n5_code)
+    query = f"SELECT SUBSTRING(CONVERT(jr.`admin_div_num`, CHAR), 1, 5) " \
+            f"FROM `{admin_div_table}` sr, `{admin_div_table}` jr " \
+            f"WHERE sr.`admin_div_num`={admin_div_num} and sr.`admin_div_level`<=1 " \
+            f"and jr.`senior_admin_div_num`=sr.`admin_div_num` " \
+            f"and (jr.`first_date` IS NULL OR YEAR(jr.`first_date`)<={year}) and (jr.`last_date` IS NULL OR YEAR(jr.`last_date`)>={year})"
+    cur = pop_conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if rows:
+        jr_admin_div_n5_codes = [row[0] for row in rows]
+    else:
+        jr_admin_div_n5_codes = None
+
+    return jr_admin_div_n5_codes
+
+
+def get_jr_kosis_admin_div_codes(kosis_admin_div_code: str, year: int, pop_conn=None):
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    if kosis_admin_div_code[0] != '0':
+        query = f"SELECT `kosis_admin_div_code`, `kosis_admin_div_code_2` " \
+                f"FROM `{admin_div_table}` " \
+                f"WHERE `kosis_admin_div_code`<>'{kosis_admin_div_code}' " \
+                f"and (`kosis_admin_div_code` LIKE '{kosis_admin_div_code}%' OR `kosis_admin_div_code_2` LIKE '{kosis_admin_div_code}%') " \
+                f"and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
+    else:
+        query = f"SELECT jr.`kosis_admin_div_code`, jr.`kosis_admin_div_code_2` " \
+                f"FROM `{admin_div_table}` sr, `{admin_div_table}` jr " \
+                f"WHERE sr.`kosis_admin_div_code`={kosis_admin_div_code} and sr.`admin_div_level`<=1 " \
+                f"and jr.`senior_admin_div_num`=sr.`admin_div_num` " \
+                f"and (jr.`first_date` IS NULL OR YEAR(jr.`first_date`)<={year}) and (jr.`last_date` IS NULL OR YEAR(jr.`last_date`)>={year})"
+    cur = pop_conn.cursor()
+    db_execute(cur, query)
+    rows = cur.fetchall()
+    if rows:
+        len_sr_code = len(kosis_admin_div_code)
+        jr_kosis_admin_div_codes = []
+        jr_kosis_admin_div_codes += [row[0] for row in rows if row[0] is not None]
+        jr_kosis_admin_div_codes += [row[1] for row in rows if row[1] is not None]
+        jr_kosis_admin_div_codes = list(dict.fromkeys(jr_kosis_admin_div_codes))
+        if kosis_admin_div_code[0] != '0':
+            jr_kosis_admin_div_codes = [code for code in jr_kosis_admin_div_codes if code[:len_sr_code] == kosis_admin_div_code]
+        jr_kosis_admin_div_codes.sort()
+    else:
+        jr_kosis_admin_div_codes = None
+
+    return jr_kosis_admin_div_codes
+
+
 def generate_field_list_target(target_id: str, values: list):
     json_list = []
     for value in values:
@@ -87,6 +266,7 @@ def get_and_save_kosis_large_data(request_data: dict, file_path: Path):
 
 def download_population_move_by_age(admin_div_nums=None, from_year=2001, till_year=2021, pop_conn=None):
     data_name = 'population_move_by_age'
+    # 연령(각세별) 이동자수: 시도/각세별 이동자수, 서울특별시 시군구 각세별 이동자수 등
 
     if not pop_conn:
         pop_conn = db_connect(pop_db)
@@ -94,24 +274,14 @@ def download_population_move_by_age(admin_div_nums=None, from_year=2001, till_ye
     for year in range(from_year, till_year + 1):
         dir_path = Path(data_dir, source_name, data_name, str(year))
 
-        if admin_div_nums:
-            query = f"SELECT `kosis_id` FROM `{admin_div_table}` " \
-                    f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
-                    f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
-        else:
-            query = f"SELECT `kosis_id` FROM `{admin_div_table}` " \
-                    f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
-        cur = pop_conn.cursor()
-        db_execute(cur, query)
-        rows = cur.fetchall()
-        if not rows:
+        admin_div_n5_codes = get_admin_div_n5_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_n5_codes:
             continue
-        kosis_ids = [row[0] for row in rows]
 
-        for kosis_id in kosis_ids:
-            request_data = get_request_data_for_population_move_by_age(kosis_id, year, pop_conn=pop_conn)
+        for admin_div_n5_code in admin_div_n5_codes:
+            request_data = get_request_data_for_population_move_by_age(admin_div_n5_code, year, pop_conn=pop_conn)
 
-            filename = f"{kosis_id}_{year:0>4}_{data_name}.csv"
+            filename = f"{admin_div_n5_code}_{year:0>4}_{data_name}.csv"
             file_path = dir_path / filename
 
             get_and_save_kosis_large_data(request_data, file_path)
@@ -120,8 +290,8 @@ def download_population_move_by_age(admin_div_nums=None, from_year=2001, till_ye
     return
 
 
-def get_request_data_for_population_move_by_age(kosis_id: str, year: int, pop_conn=None):
-    kosis_id_to_table_id = {
+def get_request_data_for_population_move_by_age(admin_div_n5_code: str, year: int, pop_conn=None):
+    admin_div_n5_code_to_table_id = {
         '00000': 'DT_1B26B01',  # 전국
         '11000': 'DT_1B26B02',  # 서울특별시
         '26000': 'DT_1B26B03',  # 부산광역시
@@ -256,8 +426,8 @@ def get_request_data_for_population_move_by_age(kosis_id: str, year: int, pop_co
         '990',  # 100세이상
     ]
 
-    if kosis_id not in kosis_id_to_table_id.keys():
-        error_msg = f"kosis_id '{kosis_id}' is invalid."
+    if admin_div_n5_code not in admin_div_n5_code_to_table_id.keys():
+        error_msg = f"admin_div_n5_code '{admin_div_n5_code}' is invalid."
         raise ValueError(error_msg)
     if year is None:
         error_msg = 'year is missing.'
@@ -266,32 +436,26 @@ def get_request_data_for_population_move_by_age(kosis_id: str, year: int, pop_co
     if not pop_conn:
         pop_conn = db_connect(pop_db)
 
-    query = f"SELECT jr.`kosis_id` " \
-            f"FROM `{admin_div_table}` sr, `{admin_div_table}` jr " \
-            f"WHERE sr.`kosis_id`='{kosis_id}' and sr.`admin_div_level`<=1 " \
-            f"and jr.`senior_admin_div_num`=sr.`admin_div_num` " \
-            f"and (jr.`first_date` IS NULL OR YEAR(jr.`first_date`)<={year}) and (jr.`last_date` IS NULL OR YEAR(jr.`last_date`)>={year})"
-    cur = pop_conn.cursor()
-    db_execute(cur, query)
-    rows = cur.fetchall()
-    if not rows:
+    jr_admin_div_n5_codes = get_jr_admin_div_n5_codes(admin_div_n5_code, year, pop_conn=pop_conn)
+    if not jr_admin_div_n5_codes:
         return
-    if kosis_id == '00000':
-        # use kosis_short_id
-        kosis_ids = [kosis_id[:2]]
-        kosis_ids += [row[0][:2] for row in rows]
+    if admin_div_n5_code == '00000':
+        # use admin_div_n2_codes
+        admin_div_n2_codes = [admin_div_n5_code[:2]]
+        admin_div_n2_codes += [jr_admin_div_n5_code[:2] for jr_admin_div_n5_code in jr_admin_div_n5_codes]
+        json_ov_lv1 = generate_field_list_target('OV_L1_ID', admin_div_n2_codes)
     else:
-        kosis_ids = [kosis_id]
-        kosis_ids += [row[0] for row in rows]
+        admin_div_n5_codes = [admin_div_n5_code]
+        admin_div_n5_codes += jr_admin_div_n5_codes
+        json_ov_lv1 = generate_field_list_target('OV_L1_ID', admin_div_n5_codes)
 
     json_items = generate_field_list_target('ITM_ID', items)
-    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_ids)
     json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
 
     json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2
     field_list = '[' + ','.join(json_list) + ']'
     data_table_info = {
-        'tblId': kosis_id_to_table_id[kosis_id],
+        'tblId': admin_div_n5_code_to_table_id[admin_div_n5_code],
         'fieldList': field_list,
         'colAxis': 'TIME,ITEM',
         'rowAxis': 'A,B',
@@ -306,26 +470,17 @@ def get_request_data_for_population_move_by_age(kosis_id: str, year: int, pop_co
 
 # # ---------- population_move_by_stack (monthly) ------------------------------------------------------------------------------------------------------------------------
 
-def download_population_move_by_stack(admin_div_nums=None, from_year=2001, from_month=1, till_year=2021, till_month=12, pop_conn=None):
+def download_population_move_by_stack(admin_div_nums=None, from_year=1970, from_month=1, till_year=2021, till_month=12, pop_conn=None):
     data_name = 'population_move_by_stack'
+    # 시군구/성/연령(5세)별 이동률
 
     if not pop_conn:
         pop_conn = db_connect(pop_db)
 
     for year in range(from_year, till_year + 1):
-        if admin_div_nums:
-            query = f"SELECT `kosis_id` FROM `{admin_div_table}` " \
-                    f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
-                    f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
-        else:
-            query = f"SELECT `kosis_id` FROM `{admin_div_table}` " \
-                    f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
-        cur = pop_conn.cursor()
-        db_execute(cur, query)
-        rows = cur.fetchall()
-        if not rows:
+        admin_div_n5_codes = get_admin_div_n5_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_n5_codes:
             continue
-        kosis_ids = [row[0] for row in rows]
 
         if year == from_year:
             start_month = from_month
@@ -339,10 +494,10 @@ def download_population_move_by_stack(admin_div_nums=None, from_year=2001, from_
         for month in range(start_month, end_month + 1):
             dir_path = Path(data_dir, source_name, data_name, str(year), str(month))
 
-            for kosis_id in kosis_ids:
-                request_data = get_request_data_for_population_move_by_stack(kosis_id, year, month, pop_conn=pop_conn)
+            for admin_div_n5_code in admin_div_n5_codes:
+                request_data = get_request_data_for_population_move_by_stack(admin_div_n5_code, year, month, pop_conn=pop_conn)
 
-                filename = f"{kosis_id}_{year:0>4}_{month:0>2}_{data_name}.csv"
+                filename = f"{admin_div_n5_code}_{year:0>4}_{month:0>2}_{data_name}.csv"
                 file_path = dir_path / filename
 
                 get_and_save_kosis_large_data(request_data, file_path)
@@ -351,7 +506,7 @@ def download_population_move_by_stack(admin_div_nums=None, from_year=2001, from_
     return
 
 
-def get_request_data_for_population_move_by_stack(kosis_id: str, year: int, month: int, pop_conn=None):
+def get_request_data_for_population_move_by_stack(admin_div_n5_code: str, year: int, month: int, pop_conn=None):
     items = [
         'T10',  # 총전입
         'T20',  # 총전출
@@ -388,8 +543,8 @@ def get_request_data_for_population_move_by_stack(kosis_id: str, year: int, mont
         '340',  # 80세이상
     ]
 
-    if not kosis_id:
-        error_msg = 'kosis_id is missing.'
+    if not admin_div_n5_code:
+        error_msg = 'admin_div_n5_code is missing.'
         raise ValueError(error_msg)
     if year is None:
         error_msg = 'year is missing.'
@@ -401,22 +556,15 @@ def get_request_data_for_population_move_by_stack(kosis_id: str, year: int, mont
     if not pop_conn:
         pop_conn = db_connect(pop_db)
 
-    query = f"SELECT jr.`kosis_id` " \
-            f"FROM `{admin_div_table}` sr, `{admin_div_table}` jr " \
-            f"WHERE sr.`kosis_id`='{kosis_id}' and sr.`admin_div_level`<=1 " \
-            f"and jr.`senior_admin_div_num`=sr.`admin_div_num` " \
-            f"and (jr.`first_date` IS NULL OR YEAR(jr.`first_date`)<={year}) and (jr.`last_date` IS NULL OR YEAR(jr.`last_date`)>={year})"
-    cur = pop_conn.cursor()
-    db_execute(cur, query)
-    rows = cur.fetchall()
-    if not rows:
+    jr_admin_div_n5_codes = get_jr_admin_div_n5_codes(admin_div_n5_code, year, pop_conn=pop_conn)
+    if not jr_admin_div_n5_codes:
         return
 
-    kosis_ids = [kosis_id[:2]]  # use kosis_short_id since its admin_level is 1 or higher
-    kosis_ids += [row[0][:2] if row[0][2:] == '0' * (len(row[0]) - 2) else row[0] for row in rows]  # use kosis_short_id if its admin_level is 1 or higher
+    admin_div_codes = [convert_admin_div_n5_code_to_admin_div_code(admin_div_n5_code)]
+    admin_div_codes += [convert_admin_div_n5_code_to_admin_div_code(jr_admin_div_n5_code) for jr_admin_div_n5_code in jr_admin_div_n5_codes]
 
     json_items = generate_field_list_target('ITM_ID', items)
-    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_ids)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', admin_div_codes)
     json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
     json_ov_lv3 = generate_field_list_target('OV_L3_ID', ov_lv3)
 
@@ -438,34 +586,23 @@ def get_request_data_for_population_move_by_stack(kosis_id: str, year: int, mont
 
 # # ---------- population_move_with_destination (monthly) ------------------------------------------------------------------------------------------------------------------------
 
-def download_population_move_with_destination_by_stack(admin_div_nums=None, from_year=2001, from_month=1, till_year=2021, till_month=12, pop_conn=None):
+def download_population_move_with_destination_by_stack(admin_div_nums=None, from_year=1970, from_month=1, till_year=2021, till_month=12, pop_conn=None):
     data_name = 'population_move_with_destination_by_stack'
+    # 전출지/전입지(시도)/성/연령(5세)별 이동자수
 
     if not pop_conn:
         pop_conn = db_connect(pop_db)
 
     for year in range(from_year, till_year + 1):
-        query = f"SELECT `kosis_id` FROM `{admin_div_table}` " \
-                f"WHERE `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
-        cur = pop_conn.cursor()
-        db_execute(cur, query)
-        rows = cur.fetchall()
-        if not rows:
-            continue
-        kosis_short_ids_to = [row[0][:2] for row in rows]
+        admin_div_n5_codes_0 = get_admin_div_n5_codes_level_0_and_1([], year, pop_conn=pop_conn)
+        admin_div_n2_codes_destination = [admin_div_n5_code[:2] for admin_div_n5_code in admin_div_n5_codes_0]
 
         if not admin_div_nums:
-            kosis_ids = [row[0] for row in rows]
+            admin_div_n5_codes = admin_div_n5_codes_0
         else:
-            query = f"SELECT `kosis_id` FROM `{admin_div_table}` " \
-                    f"WHERE `admin_div_num` in ({list_to_values(admin_div_nums)}) " \
-                    f"and `admin_div_level`<=1 and (`first_date` IS NULL OR YEAR(`first_date`)<={year}) and (`last_date` IS NULL OR YEAR(`last_date`)>={year})"
-            cur = pop_conn.cursor()
-            db_execute(cur, query)
-            rows = cur.fetchall()
-            if not rows:
-                continue
-            kosis_ids = [row[0] for row in rows]
+            admin_div_n5_codes = get_admin_div_n5_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_n5_codes:
+            continue
 
         if year == from_year:
             start_month = from_month
@@ -479,10 +616,11 @@ def download_population_move_with_destination_by_stack(admin_div_nums=None, from
         for month in range(start_month, end_month + 1):
             dir_path = Path(data_dir, source_name, data_name, str(year), str(month))
 
-            for kosis_id in kosis_ids:
-                request_data = get_request_data_for_population_move_with_destination_by_stack(kosis_id[:2], kosis_short_ids_to, year, month)
+            for admin_div_n5_code in admin_div_n5_codes:
+                admin_div_n2_code = admin_div_n5_code[:2]
+                request_data = get_request_data_for_population_move_with_destination_by_stack(admin_div_n2_code, admin_div_n2_codes_destination, year, month)
 
-                filename = f"{kosis_id}_{year:0>4}_{month:0>2}_{data_name}.csv"
+                filename = f"{admin_div_n5_code}_{year:0>4}_{month:0>2}_{data_name}.csv"
                 file_path = dir_path / filename
 
                 get_and_save_kosis_large_data(request_data, file_path)
@@ -491,7 +629,7 @@ def download_population_move_with_destination_by_stack(admin_div_nums=None, from
     return
 
 
-def get_request_data_for_population_move_with_destination_by_stack(kosis_short_id: str, kosis_short_ids_to: list, year: int, month: int):
+def get_request_data_for_population_move_with_destination_by_stack(admin_div_n2_code: str, admin_div_n2_codes_destination: list, year: int, month: int):
     items = [
         'T70',  # 이동자수
         'T80',  # 순이동자수
@@ -522,11 +660,11 @@ def get_request_data_for_population_move_with_destination_by_stack(kosis_short_i
         '340',  # 80세이상
     ]
 
-    if not kosis_short_id:
-        error_msg = 'kosis_id is missing.'
+    if not admin_div_n2_code:
+        error_msg = 'admin_div_n2_code is missing.'
         raise ValueError(error_msg)
-    if not kosis_short_ids_to:
-        error_msg = 'kosis_ids_to is missing.'
+    if not admin_div_n2_codes_destination:
+        error_msg = 'admin_div_n2_codes_destination is missing.'
         raise ValueError(error_msg)
     if year is None:
         error_msg = 'year is missing.'
@@ -536,8 +674,8 @@ def get_request_data_for_population_move_with_destination_by_stack(kosis_short_i
         raise ValueError(error_msg)
 
     json_items = generate_field_list_target('ITM_ID', items)
-    json_ov_lv1 = generate_field_list_target('OV_L1_ID', [kosis_short_id])
-    json_ov_lv2 = generate_field_list_target('OV_L2_ID', kosis_short_ids_to)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', [admin_div_n2_code])
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', admin_div_n2_codes_destination)
     json_ov_lv3 = generate_field_list_target('OV_L3_ID', ov_lv3)
     json_ov_lv4 = generate_field_list_target('OV_L4_ID', ov_lv4)
 
@@ -548,6 +686,695 @@ def get_request_data_for_population_move_with_destination_by_stack(kosis_short_i
         'fieldList': field_list,
         'colAxis': 'TIME,ITEM',
         'rowAxis': 'B,C,SBB,YRE',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth (monthly) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth(admin_div_nums=None, from_year=1997, from_month=1, till_year=2020, till_month=12, pop_conn=None):
+    data_name = 'birth'
+    # 시군구/성/월별 출생
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    for year in range(from_year, till_year + 1):
+        admin_div_nums_and_codes = get_admin_div_nums_and_kosis_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_nums_and_codes:
+            continue
+
+        if year == from_year:
+            start_month = from_month
+        else:
+            start_month = 1
+        if year == till_year:
+            end_month = till_month
+        else:
+            end_month = 12
+
+        for month in range(start_month, end_month + 1):
+            dir_path = Path(data_dir, source_name, data_name, str(year), str(month))
+
+            for admin_div_num_and_code in admin_div_nums_and_codes:
+                request_data = get_request_data_for_birth(admin_div_num_and_code[1], year, month, pop_conn=pop_conn)
+
+                filename = f"{convert_admin_div_num_to_admin_div_n5_code(admin_div_num_and_code[0])}_{year:0>4}_{month:0>2}_{data_name}.csv"
+                file_path = dir_path / filename
+
+                get_and_save_kosis_large_data(request_data, file_path)
+                sleep(15)
+
+    return
+
+
+def get_request_data_for_birth(kosis_admin_div_code: str, year: int, month: int, pop_conn=None):
+    items = [
+        'T1',  # 계
+        'T2',  # 남자
+        'T3',  # 여자
+    ]
+
+    if not kosis_admin_div_code:
+        error_msg = 'kosis_admin_div_code is missing.'
+        raise ValueError(error_msg)
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+    if month is None:
+        error_msg = 'month is missing.'
+        raise ValueError(error_msg)
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    jr_kosis_admin_div_codes = get_jr_kosis_admin_div_codes(kosis_admin_div_code, year, pop_conn=pop_conn)
+    if not jr_kosis_admin_div_codes:
+        return
+
+    kosis_admin_div_codes = [kosis_admin_div_code]
+    kosis_admin_div_codes += jr_kosis_admin_div_codes
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"M,{year:0>4}{month:0>2},@"}}'] + json_items + json_ov_lv1
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B81A01',
+        'fieldList': field_list,
+        'colAxis': 'TIME,ITEM',
+        'rowAxis': 'A',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth_by_order (annual) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth_by_order(admin_div_nums=None, from_year=2000, till_year=2020, pop_conn=None):
+    data_name = 'birth_by_order'
+    # 시군구/성/출산순위별 출생
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    for year in range(from_year, till_year + 1):
+        dir_path = Path(data_dir, source_name, data_name, str(year))
+
+        admin_div_nums_and_codes = get_admin_div_nums_and_kosis_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_nums_and_codes:
+            continue
+
+        for admin_div_num_and_code in admin_div_nums_and_codes:
+            request_data = get_request_data_for_birth_by_order(admin_div_num_and_code[1], year, pop_conn=pop_conn)
+
+            filename = f"{convert_admin_div_num_to_admin_div_n5_code(admin_div_num_and_code[0])}_{year:0>4}_{data_name}.csv"
+            file_path = dir_path / filename
+
+            get_and_save_kosis_large_data(request_data, file_path)
+            sleep(20)
+
+    return
+
+
+def get_request_data_for_birth_by_order(kosis_admin_div_code: str, year: int, pop_conn=None):
+    items = [
+        'T1',  # 계
+        'T2',  # 남자
+        'T3',  # 여자
+    ]
+    ov_lv2 = [
+        '00',  # 총계
+        '01',  # 1아
+        '02',  # 2아
+        '13',  # 3아 이상
+        '99',  # 미상
+    ]
+
+    if not kosis_admin_div_code:
+        error_msg = 'kosis_admin_div_code is missing.'
+        raise ValueError(error_msg)
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    jr_kosis_admin_div_codes = get_jr_kosis_admin_div_codes(kosis_admin_div_code, year, pop_conn=pop_conn)
+    if not jr_kosis_admin_div_codes:
+        return
+
+    kosis_admin_div_codes = [kosis_admin_div_code]
+    kosis_admin_div_codes += jr_kosis_admin_div_codes
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B81A03',
+        'fieldList': field_list,
+        'colAxis': 'TIME,ITEM',
+        'rowAxis': 'A,J',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth_by_stack (annual) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth_by_stack(admin_div_nums=None, from_year=2000, till_year=2020, pop_conn=None):
+    data_name = 'birth_by_stack'
+    # 시군구/ 모의 평균 출산연령, 모의 연령별(5세간격) 출생
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    for year in range(from_year, till_year + 1):
+        dir_path = Path(data_dir, source_name, data_name, str(year))
+
+        admin_div_nums_and_codes = get_admin_div_nums_and_kosis_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_nums_and_codes:
+            continue
+
+        for admin_div_num_and_code in admin_div_nums_and_codes:
+            request_data = get_request_data_for_birth_by_stack(admin_div_num_and_code[1], year, pop_conn=pop_conn)
+
+            filename = f"{convert_admin_div_num_to_admin_div_n5_code(admin_div_num_and_code[0])}_{year:0>4}_{data_name}.csv"
+            file_path = dir_path / filename
+
+            get_and_save_kosis_large_data(request_data, file_path)
+            sleep(20)
+
+    return
+
+
+def get_request_data_for_birth_by_stack(kosis_admin_div_code: str, year: int, pop_conn=None):
+    items = [
+        'T0',  # 모의 평균 출산 연령(세)
+        'T1',  # 출생아수(명)
+        'T2',  # 모의 연령별 출생아수(명):15-19세
+        'T3',  # 20-24세(명)
+        'T4',  # 25-29세(명)
+        'T5',  # 30-34세(명)
+        'T6',  # 35-39세(명)
+        'T7',  # 40-44세(명)
+        'T8',  # 45-49세(명)
+    ]
+
+    if not kosis_admin_div_code:
+        error_msg = 'kosis_admin_div_code is missing.'
+        raise ValueError(error_msg)
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    jr_kosis_admin_div_codes = get_jr_kosis_admin_div_codes(kosis_admin_div_code, year, pop_conn=pop_conn)
+    if not jr_kosis_admin_div_codes:
+        return
+
+    kosis_admin_div_codes = [kosis_admin_div_code]
+    kosis_admin_div_codes += jr_kosis_admin_div_codes
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B81A28',
+        'fieldList': field_list,
+        'colAxis': 'TIME,ITEM',
+        'rowAxis': 'A',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth_by_stack_and_order (annual) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth_by_stack_and_order(from_year=1990, till_year=2020, pop_conn=None):
+    data_name = 'birth_by_stack_and_order'
+    #시도/성/모의 연령(5세계급)/출산순위별 출생
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    dir_path = Path(data_dir, source_name, data_name)
+
+    for year in range(from_year, till_year + 1):
+        kosis_admin_div_codes = get_kosis_admin_div_codes_level_0_and_1([], year, pop_conn=pop_conn)
+        request_data = get_request_data_for_birth_by_stack_and_order(kosis_admin_div_codes, year)
+
+        filename = f"{year:0>4}_{data_name}.csv"
+        file_path = dir_path / filename
+
+        get_and_save_kosis_large_data(request_data, file_path)
+        sleep(15)
+
+    return
+
+
+def get_request_data_for_birth_by_stack_and_order(kosis_admin_div_codes: list, year: int):
+    items = [
+        'T1',  # 계
+        'T2',  # 남자
+        'T3',  # 여자
+    ]
+    ov_lv2 = [
+        '00',  # 계
+        '16',  # 15세 미만
+        '20',  # 15 - 19세
+        '25',  # 20 - 24세
+        '30',  # 25 - 29세
+        '35',  # 30 - 34세
+        '40',  # 35 - 39세
+        '45',  # 40 - 44세
+        '50',  # 45 - 49세
+        '56',  # 50세 이상
+        '95',  # 연령미상
+    ]
+    ov_lv3 = [
+        '00',  # 총계
+        '01',  # 1아
+        '02',  # 2아
+        '03',  # 3아
+        '04',  # 4아
+        '05',  # 5아
+        '06',  # 6아
+        '07',  # 7아
+        '08',  # 8아이상
+        '99',  # 미상
+    ]
+
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
+    json_ov_lv3 = generate_field_list_target('OV_L3_ID', ov_lv3)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2 + json_ov_lv3
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B81A12',
+        'fieldList': field_list,
+        'colAxis': 'TIME,ITEM',
+        'rowAxis': 'A,F,J',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth_by_age_and_order (annual) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth_by_age_and_order(from_year=1981, till_year=2020):
+    data_name = 'birth_by_age_and_order'
+    # 성/모의 연령(각세)/출산순위별 출생
+
+    dir_path = Path(data_dir, source_name, data_name)
+
+    for year in range(from_year, till_year + 1):
+        request_data = get_request_data_for_birth_by_age_and_order(year)
+
+        filename = f"{year:0>4}_{data_name}.csv"
+        file_path = dir_path / filename
+
+        get_and_save_kosis_large_data(request_data, file_path)
+        sleep(15)
+
+    return
+
+
+def get_request_data_for_birth_by_age_and_order(year: int):
+    items = [
+        'T1',  # 출생
+    ]
+    ov_lv1 = [
+        '0',  # 계
+        '1',  # 남자
+        '2',  # 여자
+    ]
+    ov_lv2 = [
+        '00',   # 계
+        '16',   # 15세미만
+        '201',  # 15세
+        '202',  # 16세
+        '203',  # 17세
+        '204',  # 18세
+        '205',  # 19세
+        '251',  # 20세
+        '252',  # 21세
+        '253',  # 22세
+        '254',  # 23세
+        '255',  # 24세
+        '301',  # 25세
+        '302',  # 26세
+        '303',  # 27세
+        '304',  # 28세
+        '305',  # 29세
+        '351',  # 30세
+        '352',  # 31세
+        '353',  # 32세
+        '354',  # 33세
+        '355',  # 34세
+        '401',  # 35세
+        '402',  # 36세
+        '403',  # 37세
+        '404',  # 38세
+        '405',  # 39세
+        '451',  # 40세
+        '452',  # 41세
+        '453',  # 42세
+        '454',  # 43세
+        '455',  # 44세
+        '501',  # 45세
+        '502',  # 46세
+        '503',  # 47세
+        '504',  # 48세
+        '505',  # 49세
+        '56',   # 50세이상
+        '95',   # 연령미상
+    ]
+    ov_lv3 = [
+        '00',  # 총계
+        '01',  # 1아
+        '02',  # 2아
+        '03',  # 3아
+        '04',  # 4아
+        '05',  # 5아
+        '06',  # 6아
+        '07',  # 7아
+        '08',  # 8아 이상
+        '99',  # 미상
+    ]
+
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', ov_lv1)
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
+    json_ov_lv3 = generate_field_list_target('OV_L3_ID', ov_lv3)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2 + json_ov_lv3
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B80A01',
+        'fieldList': field_list,
+        'colAxis': 'TIME',
+        'rowAxis': 'SBB,F,J',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth by cohabitation period (annual) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth_by_cohabitation_period(from_year=1993, till_year=2020, pop_conn=None):
+    data_name = 'birth_by_cohabitation_period'
+    # 시도/모의 연령/동거기간별 출생
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    dir_path = Path(data_dir, source_name, data_name)
+
+    for year in range(from_year, till_year + 1):
+        kosis_admin_div_codes = get_kosis_admin_div_codes_level_0_and_1([], year, pop_conn=pop_conn)
+        request_data = get_request_data_for_birth_by_cohabitation_period(kosis_admin_div_codes, year)
+
+        filename = f"{year:0>4}_{data_name}.csv"
+        file_path = dir_path / filename
+
+        get_and_save_kosis_large_data(request_data, file_path)
+        sleep(15)
+
+    return
+
+
+def get_request_data_for_birth_by_cohabitation_period(kosis_admin_div_codes: list, year: int):
+    items = [
+        'T1',  # 출생
+    ]
+    ov_lv2 = [
+        '00',  # 계
+        '16',  # 15세 미만
+        '20',  # 15 - 19세
+        '25',  # 20 - 24세
+        '30',  # 25 - 29세
+        '35',  # 30 - 34세
+        '40',  # 35 - 39세
+        '45',  # 40 - 44세
+        '50',  # 45 - 49세
+        '56',  # 50세 이상
+        '95',  # 연령미상
+    ]
+    ov_lv3 = [
+        '00',  # 계
+        '01',  # 1년미만
+        '03',  # 1년
+        '06',  # 2년
+        '09',  # 3년
+        '12',  # 4년
+        '15',  # 5년
+        '18',  # 6년
+        '21',  # 7년
+        '24',  # 8년
+        '27',  # 9년
+        '30',  # 10~14년
+        '40',  # 15~19년
+        '50',  # 20년이상
+        '95',  # 미상
+    ]
+
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
+    json_ov_lv3 = generate_field_list_target('OV_L3_ID', ov_lv3)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2 + json_ov_lv3
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B81A08',
+        'fieldList': field_list,
+        'colAxis': 'TIME',
+        'rowAxis': 'A,G,K',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- birth by marital status (annual) ------------------------------------------------------------------------------------------------------------------------
+
+def download_birth_by_marital_status(from_year=1981, till_year=2020, pop_conn=None):
+    data_name = 'birth_by_marital_status'
+    # 시도/법적혼인상태별 출생
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    dir_path = Path(data_dir, source_name, data_name)
+
+    for year in range(from_year, till_year + 1):
+        kosis_admin_div_codes = get_kosis_admin_div_codes_level_0_and_1([], year, pop_conn=pop_conn)
+        request_data = get_request_data_for_birth_by_marital_status(kosis_admin_div_codes, year)
+
+        filename = f"{year:0>4}_{data_name}.csv"
+        file_path = dir_path / filename
+
+        get_and_save_kosis_large_data(request_data, file_path)
+        sleep(15)
+
+    return
+
+
+def get_request_data_for_birth_by_marital_status(kosis_admin_div_codes: list, year: int):
+    items = [
+        'T1',  # 총계
+        'T2',  # 혼인중의
+        'T3',  # 혼인외의
+        'T4',  # 미상
+
+    ]
+    ov_lv2 = [
+        '00',  # 계
+        '16',  # 15세 미만
+        '20',  # 15 - 19세
+        '25',  # 20 - 24세
+        '30',  # 25 - 29세
+        '35',  # 30 - 34세
+        '40',  # 35 - 39세
+        '45',  # 40 - 44세
+        '50',  # 45 - 49세
+        '56',  # 50세 이상
+        '95',  # 연령미상
+    ]
+    ov_lv3 = [
+        '00',  # 계
+        '01',  # 1년미만
+        '03',  # 1년
+        '06',  # 2년
+        '09',  # 3년
+        '12',  # 4년
+        '15',  # 5년
+        '18',  # 6년
+        '21',  # 7년
+        '24',  # 8년
+        '27',  # 9년
+        '30',  # 10~14년
+        '40',  # 15~19년
+        '50',  # 20년이상
+        '95',  # 미상
+    ]
+
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
+    json_ov_lv3 = generate_field_list_target('OV_L3_ID', ov_lv3)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"Y,{year:0>4},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2 + json_ov_lv3
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B81A16',
+        'fieldList': field_list,
+        'colAxis': 'TIME,ITEM',
+        'rowAxis': 'A',
+    }
+
+    request_data = data_default.copy()
+    request_data.update(data_table_info)
+    request_data.update(data_down_large)
+
+    return request_data
+
+
+# # ---------- death (monthly) ------------------------------------------------------------------------------------------------------------------------
+
+def download_death(admin_div_nums=None, from_year=1997, from_month=1, till_year=2020, till_month=12, pop_conn=None):
+    data_name = 'death'
+    # 시군구/월별 사망자수(1997~)
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    for year in range(from_year, till_year + 1):
+        admin_div_nums_and_codes = get_admin_div_nums_and_kosis_codes_level_0_and_1(admin_div_nums, year, pop_conn=pop_conn)
+        if not admin_div_nums_and_codes:
+            continue
+
+        if year == from_year:
+            start_month = from_month
+        else:
+            start_month = 1
+        if year == till_year:
+            end_month = till_month
+        else:
+            end_month = 12
+
+        for month in range(start_month, end_month + 1):
+            dir_path = Path(data_dir, source_name, data_name, str(year), str(month))
+
+            for admin_div_num_and_code in admin_div_nums_and_codes:
+                request_data = get_request_data_for_death(admin_div_num_and_code[1], year, month, pop_conn=pop_conn)
+
+                filename = f"{convert_admin_div_num_to_admin_div_n5_code(admin_div_num_and_code[0])}_{year:0>4}_{month:0>2}_{data_name}.csv"
+                file_path = dir_path / filename
+
+                get_and_save_kosis_large_data(request_data, file_path)
+                sleep(15)
+
+    return
+
+
+def get_request_data_for_death(kosis_admin_div_code: str, year: int, month: int, pop_conn=None):
+    items = [
+        'T1',  # 사망자수
+    ]
+    ov_lv2 = [
+        '0',  # 계
+        '1',  # 남자
+        '2',  # 여자
+    ]
+
+    if not kosis_admin_div_code:
+        error_msg = 'kosis_admin_div_code is missing.'
+        raise ValueError(error_msg)
+    if year is None:
+        error_msg = 'year is missing.'
+        raise ValueError(error_msg)
+    if month is None:
+        error_msg = 'month is missing.'
+        raise ValueError(error_msg)
+
+    if not pop_conn:
+        pop_conn = db_connect(pop_db)
+
+    jr_kosis_admin_div_codes = get_jr_kosis_admin_div_codes(kosis_admin_div_code, year, pop_conn=pop_conn)
+    if not jr_kosis_admin_div_codes:
+        return
+
+    kosis_admin_div_codes = [kosis_admin_div_code]
+    kosis_admin_div_codes += jr_kosis_admin_div_codes
+
+    json_items = generate_field_list_target('ITM_ID', items)
+    json_ov_lv1 = generate_field_list_target('OV_L1_ID', kosis_admin_div_codes)
+    json_ov_lv2 = generate_field_list_target('OV_L2_ID', ov_lv2)
+
+    json_list = [f'{{"targetId":"PRD","targetValue":"","prdValue":"M,{year:0>4}{month:0>2},@"}}'] + json_items + json_ov_lv1 + json_ov_lv2
+    field_list = '[' + ','.join(json_list) + ']'
+    data_table_info = {
+        'tblId': 'DT_1B82A01',
+        'fieldList': field_list,
+        'colAxis': 'TIME',
+        'rowAxis': 'A,SBB',
     }
 
     request_data = data_default.copy()
