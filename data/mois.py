@@ -9,7 +9,8 @@ from time import sleep
 
 from data.data_loc import data_dir
 from db.connector import pop_db, admin_div_table, db_connect
-from db.query import select_one_row_one_column, insert_dict
+from db.query import select_one_row_one_column, select_one_row_pack_into_dict, insert_dict, update_dict
+from db.query_str import dict_to_set
 from pop.model import str_to_int
 
 source_name = 'mois'
@@ -616,15 +617,15 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                         col_keys.append(None)
                         continue
 
-                    # determine gender_type
+                    # determine sex_type
                     if col_name_split[1] == '남':
-                        gender_type = 'M'
+                        sex_type = 'M'
                     elif col_name_split[1] == '여':
-                        gender_type = 'F'
+                        sex_type = 'F'
                     elif col_name_split[1] == '계' or col_name_split[1] in resident_type_to_col_name.values():
-                        gender_type = 'T'
+                        sex_type = '-'
                     else:
-                        error_msg = f"Unknown gender_type in data column '{col_name}'."
+                        error_msg = f"Unknown sex_type in data column '{col_name}'."
                         raise ValueError(error_msg)
 
                     # determine age type
@@ -641,21 +642,21 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                             error_msg = f"Unknown age_type in data column '{col_name}'."
                             raise ValueError(error_msg)
 
-                    col_keys.append({'age_type': age_type, 'gender_type': gender_type})
+                    col_keys.append({'age_type': age_type, 'sex_type': sex_type})
 
                 elif data_type in ['B', 'D']:
-                    # get gender_type
+                    # get sex_type
                     if '남자' in col_name_split[1]:
-                        gender_type = 'M'
+                        sex_type = 'M'
                     elif '여자' in col_name_split[1]:
-                        gender_type = 'F'
+                        sex_type = 'F'
                     elif '계' in col_name_split[1]:
-                        gender_type = 'T'
+                        sex_type = '-'
                     else:
-                        error_msg = f"Unknown gender_type in data column '{col_name}'."
+                        error_msg = f"Unknown sex_type in data column '{col_name}'."
                         raise ValueError(error_msg)
 
-                    col_keys.append({'gender_type': gender_type})
+                    col_keys.append({'sex_type': sex_type})
 
                 elif data_type == 'H':
                     if '세대' not in col_name_split[-1]:
@@ -681,8 +682,8 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                     continue
                 admin_div_num = int(idx_code)
 
-                # fill row_data
-                row_data = {}
+                # fill new_data
+                new_data = {}
                 for col_i, csv_value in enumerate(row):
                     if col_keys[col_i] is None:
                         continue
@@ -690,31 +691,31 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                     value = str_to_int(csv_value)
                     # insert data
                     if data_type == 'P':
-                        gender_type = col_keys[col_i]['gender_type']
-                        if not (gender_type in row_data.keys()):
-                            row_data[gender_type] = {}
+                        sex_type = col_keys[col_i]['sex_type']
+                        if not (sex_type in new_data.keys()):
+                            new_data[sex_type] = {}
 
                         age_type = col_keys[col_i]['age_type']
-                        if age_type not in row_data[gender_type].keys():
-                            row_data[gender_type][age_type] = value
-                        elif row_data[gender_type][age_type] != value:
-                            error_msg = f"Data contains duplicate values for '{gender_type}', '{age_type}': '{row_data[gender_type][age_type]}' vs '{value}'."
+                        if age_type not in new_data[sex_type].keys():
+                            new_data[sex_type][age_type] = value
+                        elif new_data[sex_type][age_type] != value:
+                            error_msg = f"Data contains duplicate values for '{sex_type}', '{age_type}': '{new_data[sex_type][age_type]}' vs '{value}'."
                             raise ValueError(error_msg)
 
                     elif data_type in ['B', 'D']:
-                        gender_type = col_keys[col_i]['gender_type']
-                        if gender_type not in row_data.keys():
-                            row_data[gender_type] = value
-                        elif row_data[gender_type] != value:
-                            error_msg = f"Data contains duplicate values for '{gender_type}': '{row_data[gender_type]}' vs '{value}'."
+                        sex_type = col_keys[col_i]['sex_type']
+                        if sex_type not in new_data.keys():
+                            new_data[sex_type] = value
+                        elif new_data[sex_type] != value:
+                            error_msg = f"Data contains duplicate values for '{sex_type}': '{new_data[sex_type]}' vs '{value}'."
                             raise ValueError(error_msg)
 
                     elif data_type == 'H':
                         household_type = col_keys[col_i]['household_type']
-                        if household_type not in row_data.keys():
-                            row_data[household_type] = value
-                        elif row_data[household_type] != value:
-                            error_msg = f"Data contains duplicate values for '{household_type}': '{row_data[household_type]}' vs '{value}'."
+                        if household_type not in new_data.keys():
+                            new_data[household_type] = value
+                        elif new_data[household_type] != value:
+                            error_msg = f"Data contains duplicate values for '{household_type}': '{new_data[household_type]}' vs '{value}'."
                             raise ValueError(error_msg)
 
                     else:
@@ -722,44 +723,102 @@ def upload_mois_data(admin_div_codes: list, data_type: str, resident_type=None, 
                         raise ValueError(error_msg)
 
                 if data_type == 'P':
-                    for gender_type, gender_pyramid in row_data.items():
-                        new_data = {
+                    for sex_type, age_pyramid in new_data.items():
+                        unique_keys = {
                             'resident_type': resident_type,
                             'admin_div_num': admin_div_num,
                             'year': fname_year,
                             'month': fname_month,
-                            'gender_type': gender_type,
+                            'sex_type': sex_type,
                         }
-                        new_data.update(gender_pyramid)
-                        insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
-                        if insert_success:
-                            print(f"  > Inserted into '{data_type_table[data_type]}': resident_type='{resident_type}', admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}', gender_type='{gender_type}'.")
+                        row_data = age_pyramid
+
+                        curr_row = select_one_row_pack_into_dict(pop_conn, data_type_table[data_type], unique_keys, [])
+                        if curr_row:
+                            for value_key in row_data.keys():
+                                if curr_row[value_key] != row_data[value_key]:
+                                    if curr_row[value_key] is None:
+                                        update_success = update_dict(pop_conn, data_type_table[data_type], unique_keys, {value_key: row_data[value_key]})
+                                        if update_success:
+                                            print(f"  > Updated '{value_key}' in '{data_type_table[data_type]}': {dict_to_set(unique_keys)}.")
+                                    elif row_data[value_key] is not None:
+                                        error_msg = f"Conflict with column '{value_key}' in {dict_to_set(unique_keys)}: current '{curr_row[value_key]}' vs new '{row_data[value_key]}'."
+                                        raise ValueError(error_msg)
+                        else:
+                            new_row = unique_keys.copy()
+                            new_row.update(row_data)
+                            insert_success = insert_dict(pop_conn, data_type_table[data_type], new_row)
+                            if insert_success:
+                                print(f"  > Inserted into '{data_type_table[data_type]}': resident_type='{resident_type}', admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}', sex_type='{sex_type}'.")
+                            else:
+                                error_msg = f"DB insert failure with file '{file_path}': {dict_to_set(unique_keys)}."
+                                raise ValueError(error_msg)
 
                 elif data_type in ['B', 'D']:
-                    new_data = {
+                    unique_keys = {
                         'admin_div_num': admin_div_num,
                         'year': fname_year,
                         'month': fname_month,
-                        'total': row_data['T'],
-                        'male': row_data['M'],
-                        'female': row_data['F'],
                     }
-                    insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
-                    if insert_success:
-                        print(f"  > Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+                    row_data = {
+                        'total': new_data['-'],
+                        'male': new_data['M'],
+                        'female': new_data['F'],
+                    }
+
+                    curr_row = select_one_row_pack_into_dict(pop_conn, data_type_table[data_type], unique_keys, [])
+                    if curr_row:
+                        for value_key in row_data.keys():
+                            if curr_row[value_key] != row_data[value_key]:
+                                if curr_row[value_key] is None:
+                                    update_success = update_dict(pop_conn, data_type_table[data_type], unique_keys, {value_key: row_data[value_key]})
+                                    if update_success:
+                                        print(f"  > Updated '{value_key}' in '{data_type_table[data_type]}': {dict_to_set(unique_keys)}.")
+                                elif row_data[value_key] is not None:
+                                    error_msg = f"Conflict with column '{value_key}' in {dict_to_set(unique_keys)}: current '{curr_row[value_key]}' vs new '{row_data[value_key]}'."
+                                    raise ValueError(error_msg)
+                    else:
+                        new_row = unique_keys.copy()
+                        new_row.update(row_data)
+                        insert_success = insert_dict(pop_conn, data_type_table[data_type], new_row)
+                        if insert_success:
+                            print(f"  > Inserted into '{data_type_table[data_type]}': admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+                        else:
+                            error_msg = f"DB insert failure with file '{file_path}': {dict_to_set(unique_keys)}."
+                            raise ValueError(error_msg)
 
                 elif data_type == 'H':
-                    new_data = {
+                    unique_keys = {
                         'resident_type': resident_type,
                         'admin_div_num': admin_div_num,
                         'year': fname_year,
                         'month': fname_month,
                     }
-                    new_data.update(row_data)
-                    insert_success = insert_dict(pop_conn, data_type_table[data_type], new_data)
-                    if insert_success:
-                        print(f"  > Inserted into '{data_type_table[data_type]}': resident_type='{resident_type}', admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+                    row_data = new_data
+
+                    curr_row = select_one_row_pack_into_dict(pop_conn, data_type_table[data_type], unique_keys, [])
+                    if curr_row:
+                        for value_key in row_data.keys():
+                            if curr_row[value_key] != row_data[value_key]:
+                                if curr_row[value_key] is None:
+                                    update_success = update_dict(pop_conn, data_type_table[data_type], unique_keys, {value_key: row_data[value_key]})
+                                    if update_success:
+                                        print(f"  > Updated '{value_key}' in '{data_type_table[data_type]}': {dict_to_set(unique_keys)}.")
+                                elif row_data[value_key] is not None:
+                                    error_msg = f"Conflict with column '{value_key}' in {dict_to_set(unique_keys)}: current '{curr_row[value_key]}' vs new '{row_data[value_key]}'."
+                                    raise ValueError(error_msg)
+                    else:
+                        new_row = unique_keys.copy()
+                        new_row.update(row_data)
+                        insert_success = insert_dict(pop_conn, data_type_table[data_type], new_row)
+                        if insert_success:
+                            print(f"  > Inserted into '{data_type_table[data_type]}': resident_type='{resident_type}', admin_div_num='{admin_div_num}', year='{fname_year}', month='{fname_month}'.")
+                        else:
+                            error_msg = f"DB insert failure with file '{file_path}': {dict_to_set(unique_keys)}."
+                            raise ValueError(error_msg)
 
             pop_conn.commit()
             print(f">>> File '{file_path.name}' has been uploaded into '{data_type_table[data_type]}'.")
             print()
+
+    return

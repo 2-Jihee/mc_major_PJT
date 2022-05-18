@@ -1,7 +1,7 @@
 import mariadb
 
 from db.connector import db_execute, db_executemany
-from db.query_str import list_to_select, dict_to_where
+from db.query_str import list_to_select, dict_to_where, dict_to_set
 
 
 def select_one_column(conn: mariadb.connection, db_table: str, keys: dict, select_column: str):
@@ -80,10 +80,21 @@ def select_one_row_pack_into_dict(conn: mariadb.connection, db_table: str, uniqu
     return row_dict
 
 
-def insert_dict(conn: mariadb.connection, db_table: str, new_data: dict):
-    select_str = list_to_select(list(new_data.keys()))
-    placeholder_str = ", ".join(['?'] * len(new_data))
-    insert_data = tuple(new_data.values())
+def update_dict(conn: mariadb.connection, db_table: str, keys: dict, update_data: dict):
+    set_str = dict_to_set(update_data)
+    where_str = dict_to_where(keys)
+
+    query = f"UPDATE `{db_table}` SET {set_str} WHERE {where_str}"
+    cur = conn.cursor()
+    update_success = db_execute(cur, query)
+
+    return update_success
+
+
+def insert_dict(conn: mariadb.connection, db_table: str, new_row: dict):
+    select_str = list_to_select(list(new_row.keys()))
+    placeholder_str = ", ".join(['?'] * len(new_row))
+    insert_data = tuple(new_row.values())
 
     query = f"INSERT INTO `{db_table}` ({select_str}) VALUES ({placeholder_str})"
     cur = conn.cursor()

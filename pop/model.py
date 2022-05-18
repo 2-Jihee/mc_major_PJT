@@ -1,143 +1,95 @@
 from pandas import isna
+from copy import deepcopy
 
-seoul_2020_12 = {
-    0: {'M': 23202, 'F': 21961},
-    1: {'M': 26272, 'F': 24204},
-    2: {'M': 27551, 'F': 25534},
-    3: {'M': 29263, 'F': 28038},
-    4: {'M': 32873, 'F': 31472},
-    5: {'M': 35231, 'F': 33514},
-    6: {'M': 34745, 'F': 33231},
-    7: {'M': 35008, 'F': 33122},
-    8: {'M': 38624, 'F': 36629},
-    9: {'M': 37118, 'F': 35374},
-    10: {'M': 37722, 'F': 35815},
-    11: {'M': 35728, 'F': 34110},
-    12: {'M': 38475, 'F': 36260},
-    13: {'M': 40704, 'F': 38472},
-    14: {'M': 37778, 'F': 35327},
-    15: {'M': 36809, 'F': 34364},
-    16: {'M': 40559, 'F': 38170},
-    17: {'M': 41890, 'F': 39505},
-    18: {'M': 42059, 'F': 39873},
-    19: {'M': 47936, 'F': 46936},
-    20: {'M': 56061, 'F': 57323},
-    21: {'M': 53898, 'F': 58438},
-    22: {'M': 58294, 'F': 63424},
-    23: {'M': 63413, 'F': 71587},
-    24: {'M': 67447, 'F': 76269},
-    25: {'M': 74078, 'F': 81060},
-    26: {'M': 79830, 'F': 83840},
-    27: {'M': 82196, 'F': 84142},
-    28: {'M': 84946, 'F': 86746},
-    29: {'M': 82914, 'F': 84782},
-    30: {'M': 76371, 'F': 75424},
-    31: {'M': 73168, 'F': 73712},
-    32: {'M': 72712, 'F': 72200},
-    33: {'M': 68458, 'F': 70412},
-    34: {'M': 69033, 'F': 68454},
-    35: {'M': 69548, 'F': 69407},
-    36: {'M': 68190, 'F': 68069},
-    37: {'M': 74818, 'F': 74083},
-    38: {'M': 78505, 'F': 78992},
-    39: {'M': 79575, 'F': 78502},
-    40: {'M': 77488, 'F': 77753},
-    41: {'M': 74846, 'F': 77753},
-    42: {'M': 65298, 'F': 64384},
-    43: {'M': 68369, 'F': 72073},
-    44: {'M': 68778, 'F': 69452},
-    45: {'M': 69342, 'F': 71764},
-    46: {'M': 76365, 'F': 76524},
-    47: {'M': 77451, 'F': 81184},
-    48: {'M': 80342, 'F': 81217},
-    49: {'M': 84709, 'F': 85587},
-    50: {'M': 81289, 'F': 83186},
-    51: {'M': 79949, 'F': 82015},
-    52: {'M': 77305, 'F': 80595},
-    53: {'M': 70591, 'F': 76788},
-    54: {'M': 68942, 'F': 66524},
-    55: {'M': 69941, 'F': 73872},
-    56: {'M': 69971, 'F': 73061},
-    57: {'M': 67097, 'F': 69182},
-    58: {'M': 72290, 'F': 74638},
-    59: {'M': 72281, 'F': 78715},
-    60: {'M': 73744, 'F': 82105},
-    61: {'M': 69632, 'F': 76387},
-    62: {'M': 64859, 'F': 71001},
-    63: {'M': 64348, 'F': 71117},
-    64: {'M': 58022, 'F': 65238},
-    65: {'M': 60409, 'F': 69675},
-    66: {'M': 52243, 'F': 57904},
-    67: {'M': 45398, 'F': 51517},
-    68: {'M': 49382, 'F': 55852},
-    69: {'M': 34423, 'F': 39014},
-    70: {'M': 38180, 'F': 43578},
-    71: {'M': 37924, 'F': 44277},
-    72: {'M': 37394, 'F': 43431},
-    73: {'M': 37515, 'F': 44936},
-    74: {'M': 30036, 'F': 36223},
-    75: {'M': 26301, 'F': 31527},
-    76: {'M': 26380, 'F': 32006},
-    77: {'M': 25298, 'F': 31255},
-    78: {'M': 29950, 'F': 36403},
-    79: {'M': 23303, 'F': 29217},
-    80: {'M': 18976, 'F': 25060},
-    81: {'M': 17966, 'F': 24561},
-    82: {'M': 14973, 'F': 21437},
-    83: {'M': 12609, 'F': 19360},
-    84: {'M': 10472, 'F': 17278},
-    85: {'M': 9129, 'F': 16026},
-    86: {'M': 6895, 'F': 13259},
-    87: {'M': 5412, 'F': 10984},
-    88: {'M': 4393, 'F': 9557},
-    89: {'M': 3066, 'F': 7594},
-    90: {'M': 2398, 'F': 6626},
-    91: {'M': 2121, 'F': 5665},
-    92: {'M': 1490, 'F': 4668},
-    93: {'M': 1091, 'F': 3624},
-    94: {'M': 673, 'F': 2454},
-    95: {'M': 440, 'F': 1769},
-    96: {'M': 392, 'F': 1241},
-    97: {'M': 380, 'F': 1125},
-    98: {'M': 191, 'F': 757},
-    99: {'M': 136, 'F': 499},
-    100: {'M': 200, 'F': 827},
-}
+min_print_len = 9
 
 
 class Population(object):
-    def __init__(self, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
-        # declare class variables and insert values
-        if isinstance(is_total_sum, bool):
-            self.__is_total_sum = is_total_sum
+    def __init__(self, parent=None, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
+        # check the input and declare a class variable with value: parent
+        if isinstance(parent, Population):
+            self.__parent = parent
         else:
+            self.__parent = None
+
+        # check the input and declare a class variable with value: is_total_sum
+        if not isinstance(is_total_sum, bool):
             error_msg = f"is_total_sum '{is_total_sum}' should be a boolean."
             raise ValueError(error_msg)
-        if isinstance(is_pos_only, bool):
-            self.__is_pos_only = is_pos_only
-        else:
+        self.__is_total_sum = is_total_sum
+
+        # check the input and declare a class variable with value: is_pos_only
+        if not isinstance(is_pos_only, bool):
             error_msg = f"is_pos_only '{is_pos_only}' should be a boolean."
             raise ValueError(error_msg)
-        # declare class variables and insert with class methods
+        self.__is_pos_only = is_pos_only
+
+        # declare class variables and insert values via class methods
         self.__total = None
         self.__male = None
         self.__female = None
-        self.update(total=total, male=male, female=female, sum_senior=False)
+        self.insert(total=total, male=male, female=female, delete_children=False, insert_parent=False)
+
+        # declare empty variables
+        self.children = None
         return
 
-    def sum_senior_pop(self):
-        if not self.is_total_sum():
-            raise NotImplementedError("sum_senior_pop() is not available when is_total_sum() is False")
-        if isinstance(self, Stack):
-            pyramid = self.get_pyramid()
-            if pyramid:
-                pyramid.sum_stacks()
-        elif isinstance(self, AgeLayer):
-            self.get_stack().sum_age_layers()
+    def copy(self):
+        return deepcopy(self)
+
+    def is_pos_only(self):
+        return self.__is_pos_only
+
+    def is_total_sum(self):
+        return self.__is_total_sum
+
+    def has_parent(self):
+        return isinstance(self.__parent, Population)
+
+    def get_parent(self):
+        return self.__parent
+
+    def has_children(self):
+        return isinstance(self.children, tuple)
+
+    def get_total(self):
+        return self.__total
+
+    def get_male(self):
+        return self.__male
+
+    def get_female(self):
+        return self.__female
+
+    def delete_data(self, delete_parent_data=None, delete_children_data=None):
+        if delete_parent_data is None:
+            delete_parent_data = False
+        if delete_children_data is None:
+            delete_parent_data = self.__is_total_sum
+
+        self.__total = None
+        self.__male = None
+        self.__female = None
+        if delete_parent_data:
+            self.delete_parent_data()
+        if delete_children_data:
+            self.delete_children_data()
         return
 
-    def update(self, total=None, male=None, female=None, sum_senior=True):
-        # None as input indicates "keep existing values" (in case of a conflict with new inputs, nullify existing values)
+    def delete_parent_data(self):
+        if self.has_parent():
+            parent = self.__parent()
+            parent.delete_data(delete_parent_data=True, delete_children_data=False)
+        return
+
+    def delete_children_data(self):
+        if self.has_children():
+            for child in self.children:
+                child.delete_data(delete_parent_data=False, delete_children_data=True)
+        return
+
+    def insert(self, total=None, male=None, female=None, delete_children=True, insert_parent=True):
+        # None as input indicates "keep existing values" (in case of conflict with new inputs, nullify existing values)
         # check inputs
         total_is_num = is_number(total)
         male_is_num = is_number(male)
@@ -155,50 +107,54 @@ class Population(object):
                 if female < 0:
                     error_msg = f"female '{female}' should be equal to or greater than 0."
                     raise ValueError(error_msg)
-        # insert values
-        if self.__is_total_sum:
+
+        # decide on which insert function to use
+        if not self.__is_total_sum:
+            if total is not None:
+                self.insert_total(total, delete_children=False, insert_parent=False)
+            if male is not None:
+                self.insert_male(male, delete_children=False, insert_parent=False)
+            if female is not None:
+                self.insert_female(female, delete_children=False, insert_parent=False)
+        else:
             if male_is_num and female_is_num:
                 if total_is_num:
                     if total != male + female:
                         error_msg = f"male '{male}' and female '{female}' do not sum to total '{total}'."
                         raise ValueError(error_msg)
-                self.update_genders(male, female, sum_senior=sum_senior)
+                self.insert_sexes(male, female, delete_children=delete_children, insert_parent=insert_parent)
             elif total_is_num:
                 if male_is_num:
                     if total >= male:
-                        self.update_genders(male, total - male, sum_senior=sum_senior)
+                        self.insert_sexes(male, total - male, delete_children=delete_children, insert_parent=insert_parent)
                     else:
                         error_msg = f"male '{male}' is greater than total '{total}'."
                         raise ValueError(error_msg)
                 elif female_is_num:
                     if total >= female:
-                        self.update_genders(total - female, female, sum_senior=sum_senior)
+                        self.insert_sexes(total - female, female, delete_children=delete_children, insert_parent=insert_parent)
                     else:
                         error_msg = f"female '{female}' is greater than total '{total}'."
                         raise ValueError(error_msg)
                 else:
-                    self.update_total(total, sum_senior=sum_senior)
+                    self.insert_total(total, delete_children=delete_children, insert_parent=insert_parent)
             elif male_is_num:
-                self.update_male(male, sum_senior=sum_senior)
+                self.insert_male(male, delete_children=delete_children, insert_parent=insert_parent)
             elif female_is_num:
-                self.update_female(female, sum_senior=sum_senior)
+                self.insert_female(female, delete_children=delete_children, insert_parent=insert_parent)
             else:
                 self.__total = None
                 self.__male = None
                 self.__female = None
-                if sum_senior:
-                    self.sum_senior_pop()
-        else:
-            if total is not None:
-                self.update_total(total, sum_senior=sum_senior)
-            if male is not None:
-                self.update_male(male, sum_senior=sum_senior)
-            if female is not None:
-                self.update_female(female, sum_senior=sum_senior)
+                if delete_children:
+                    self.delete_children_data()
+                if insert_parent:
+                    self.insert_parent_via_sum()
         return
 
-    def update_total(self, total, sum_senior=True):
-        # check and insert input: total
+    def insert_total(self, total, delete_children=True, insert_parent=True):
+        # in case of conflict with new input, nullify existing values
+        # check input
         if self.__is_pos_only:
             if is_pos_number(total) is False:
                 error_msg = f"total '{total}' is not a positive number."
@@ -207,28 +163,35 @@ class Population(object):
             if is_number(total) is False:
                 error_msg = f"total '{total}' is not a number."
                 raise ValueError(error_msg)
-        # insert values
+
+        # return if there is no change
+        if total == self.__total:
+            return
+
+        # insert value & delete children
         self.__total = total
+        if delete_children:
+            self.delete_children_data()
+
+        # when is_total_sum is True
         if self.__is_total_sum:
-            # delete male & female unless they agree with new total
-            male_is_pos_num = is_pos_number(self.__male)
-            female_is_pos_num = is_pos_number(self.__female)
-            if male_is_pos_num and female_is_pos_num:
+            male_is_num = is_number(self.__male)
+            female_is_num = is_number(self.__female)
+            if male_is_num and female_is_num:
                 if self.__total != self.__male + self.__female:
                     # existing male and female conflict with new total
                     self.__male = None
                     self.__female = None
-                # else: no action (data is complete)
-            elif male_is_pos_num:
-                if self.__male <= self.__total:
+            elif male_is_num:
+                if (self.__is_pos_only is False) or (self.__male <= self.__total):
                     # existing male does not conflict with new total
                     self.__female = self.__total - self.__male
                 else:
                     # existing male conflicts with new total
                     self.__male = None
                     self.__female = None
-            elif female_is_pos_num:
-                if self.__female <= self.__total:
+            elif female_is_num:
+                if (self.__is_pos_only is False) or (self.__female <= self.__total):
                     # existing female does not conflict with new total
                     self.__male = self.__total - self.__female
                 else:
@@ -238,31 +201,42 @@ class Population(object):
             else:
                 self.__male = None
                 self.__female = None
-            if sum_senior:
-                self.sum_senior_pop()
+            if insert_parent:
+                self.insert_parent_via_sum()
         return
 
-    def update_genders(self, male, female, sum_senior=True):
-        # check and insert inputs: male, female
+    def insert_sexes(self, male, female, delete_children=True, insert_parent=True):
+        # in case of conflict with new inputs, nullify existing values
+        # check inputs
         if self.__is_pos_only:
             if is_pos_number(male) is False or is_pos_number(female) is False:
-                error_msg = f"male '{male}' and female '{female}' are not positive numbers."
+                error_msg = f"male '{male}' or female '{female}' is not a positive number."
                 raise ValueError(error_msg)
         else:
             if is_number(male) is False or is_number(female) is False:
-                error_msg = f"male '{male}' and female '{female}' are not numbers."
+                error_msg = f"male '{male}' or female '{female}' is not a number."
                 raise ValueError(error_msg)
-        # insert values
+
+        # return if there is no change
+        if male == self.__male and female == self.__female:
+            return
+
+        # insert values & delete children
         self.__male = male
         self.__female = female
+        if delete_children:
+            self.delete_children_data()
+
+        # when is_total_sum is True
         if self.__is_total_sum:
             self.__total = male + female
-            if sum_senior:
-                self.sum_senior_pop()
+            if insert_parent:
+                self.insert_parent_via_sum()
         return
 
-    def update_male(self, male, sum_senior=True):
-        # check and insert input: male
+    def insert_male(self, male, delete_children=True, insert_parent=True):
+        # in case of conflict with new input, nullify existing values
+        # check inputs
         if self.__is_pos_only:
             if not is_pos_number(male):
                 error_msg = f"male '{male}' is not a positive number."
@@ -271,36 +245,46 @@ class Population(object):
             if not is_number(male):
                 error_msg = f"male '{male}' is not a number."
                 raise ValueError(error_msg)
+
+        # return if there is no change
+        if male == self.__male:
+            return
+
+        # insert values & delete children
         self.__male = male
+        if delete_children:
+            self.delete_children_data()
+
+        # when is_total_sum is True
         if self.__is_total_sum:
-            # delete total & female unless they agree with new male
-            total_is_pos_num = is_pos_number(self.__total)
-            female_is_pos_num = is_pos_number(self.__female)
-            if total_is_pos_num and female_is_pos_num:
+            total_is_num = is_number(self.__total)
+            female_is_num = is_number(self.__female)
+            if total_is_num and female_is_num:
                 if self.__total != self.__male + self.__female:
                     # existing total and female conflict with new male
                     self.__total = None
                     self.__female = None
                 # else: no action (data is complete)
-            elif total_is_pos_num:
-                if self.__total >= self.__male:
+            elif total_is_num:
+                if (self.__is_pos_only is False) or (self.__total >= self.__male):
                     # existing total does not conflict with new male
                     self.__female = self.__total - self.__male
                 else:
                     # existing total conflicts with new male
                     self.__total = None
                     self.__female = None
-            elif female_is_pos_num:
+            elif female_is_num:
                 self.__total = self.__male + self.__female
             else:
                 self.__total = None
                 self.__female = None
-            if sum_senior:
-                self.sum_senior_pop()
+            if insert_parent:
+                self.insert_parent_via_sum()
         return
 
-    def update_female(self, female, sum_senior=True):
-        # check and insert input: female
+    def insert_female(self, female, delete_children=True, insert_parent=True):
+        # in case of conflict with new input, nullify existing values
+        # check inputs
         if self.__is_pos_only:
             if not is_pos_number(female):
                 error_msg = f"female '{female}' is not a positive number."
@@ -309,272 +293,523 @@ class Population(object):
             if not is_number(female):
                 error_msg = f"female '{female}' is not a number."
                 raise ValueError(error_msg)
+
+        # return if there is no change
+        if female == self.__female:
+            return
+
+        # insert values & delete children
         self.__female = female
+        if delete_children:
+            self.delete_children_data()
+
+        # when is_total_sum is True
         if self.__is_total_sum:
-            # delete total & male unless they agree with new female
-            total_is_pos_num = is_pos_number(self.__total)
-            male_is_pos_num = is_pos_number(self.__male)
-            if total_is_pos_num and male_is_pos_num:
+            total_is_num = is_number(self.__total)
+            male_is_num = is_number(self.__male)
+            if total_is_num and male_is_num:
                 if self.__total != self.__male + self.__female:
                     # existing total and male conflict with new female
                     self.__total = None
                     self.__male = None
                 # else: no action (data is complete)
-            elif total_is_pos_num:
-                if self.__total >= self.__female:
+            elif total_is_num:
+                if (self.__is_pos_only is False) or (self.__total >= self.__female):
                     # existing total does not conflict with new female
                     self.__male = self.__total - self.__female
                 else:
                     # existing total conflicts with new female
                     self.__total = None
                     self.__male = None
-            elif male_is_pos_num:
+            elif male_is_num:
                 self.__total = self.__male + self.__female
             else:
                 self.__total = None
                 self.__male = None
-            if sum_senior:
-                self.sum_senior_pop()
+            if insert_parent:
+                self.insert_parent_via_sum()
         return
 
-    def is_pos_only(self):
-        return self.__is_pos_only
-
-    def is_total_sum(self):
-        return self.__is_total_sum
-
-    def get_total(self):
-        return self.__total
-
-    def get_male(self):
-        return self.__male
-
-    def get_female(self):
-        return self.__female
-
-    def is_complete(self):
-        total_is_pos_num = is_pos_number(self.__total)
-        male_is_pos_num = is_pos_number(self.__male)
-        female_is_pos_num = is_pos_number(self.__female)
-        if total_is_pos_num and male_is_pos_num and female_is_pos_num:
-            complete = (self.__total == self.__male + self.__female)
-        else:
-            complete = False
-        return complete
-
-
-class Pyramid(Population):
-    def __init__(self, stack_height=5, num_stacks=17, max_age_layer=100, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
-        super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
-        # declare class variables and insert values
-        if isinstance(stack_height, int):
-            self.__age_range = stack_height
-        else:
-            error_msg = f"stack_height '{stack_height}' should be an integer."
-            raise ValueError(error_msg)
-        if isinstance(num_stacks, int):
-            self.__num_stacks = num_stacks
-        else:
-            error_msg = f"num_stacks '{num_stacks}' should be an integer."
-            raise ValueError(error_msg)
-        if isinstance(max_age_layer, int):
-            self.__max_age_layer = max_age_layer
-        else:
-            error_msg = f"max_age_layer '{max_age_layer}' should be an integer."
-            raise ValueError(error_msg)
-        # declare class variables and insert values with class methods
-        self.stacks = None
-        self.__age_in_pyramid_idx = None
-        self.build_stacks(age_data=age_data)
-        return
-
-    def __repr__(self):
-        min_len = 7
-        return f'[ Total: {int_to_str(super().get_total(), min_len)},    M: {int_to_str(super().get_male(), min_len)},    F: {int_to_str(super().get_female(), min_len)} ]'
-
-    def __getitem__(self, age: int):
-        (stack_idx, age_idx) = self.__age_in_pyramid_idx[age]
-        return self.stacks[stack_idx].age_layers[age_idx]
-
-    def build_stacks(self, age_range=None, num_stacks=None, max_age_layer=None, age_data=None):
-        # default inputs
-        if age_range is None:
-            age_range = self.__age_range
-        if num_stacks is None:
-            num_stacks = self.__num_stacks
-        if max_age_layer is None:
-            max_age_layer = self.__max_age_layer
-
-        # check and insert input: age_range
-        if not isinstance(age_range, int):
-            error_msg = f"age_range '{age_range}' is not an integer."
-            raise ValueError(error_msg)
-        elif age_range < 1:
-            error_msg = f"age_range '{age_range}' should be equal to or greater than 1."
-            raise ValueError(error_msg)
-        self.__age_range = age_range
-        # check and insert input: num_stacks
-        if not isinstance(num_stacks, int):
-            error_msg = f"num_stacks '{num_stacks}' is not an integer."
-            raise ValueError(error_msg)
-        elif num_stacks < 1:
-            error_msg = f"num_stacks '{num_stacks}' should be equal to or greater than 1."
-            raise ValueError(error_msg)
-        self.__num_stacks = num_stacks
-        # check and insert input: max_age_layer
-        if not isinstance(max_age_layer, int):
-            error_msg = f"max_age_layer '{max_age_layer}' is not an integer."
-            raise ValueError(error_msg)
-        else:
-            max_age_layer_floor = age_range * (num_stacks - 1)
-            if not max_age_layer >= max_age_layer_floor:
-                error_msg = f"max_age_layer '{max_age_layer}' should be equal to or greater than {max_age_layer_floor}."
-                raise ValueError(error_msg)
-        self.__max_age_layer = max_age_layer
-
-        # build stacks one by one
-        stacks = []
-        age_to_stack = {}
-        for i in range(num_stacks):
-            min_age = i * age_range
-            if i < num_stacks - 1:
-                max_age = (i + 1) * age_range - 1
-                stack = Stack(pyramid=self, min_age=min_age, max_age=max_age, is_last_stack=False, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), age_data=age_data)
-                age_dict = {age: [i, j] for j, age in enumerate(range(min_age, max_age + 1))}
-            else:
-                stack = Stack(pyramid=self, min_age=min_age, max_age=max_age_layer, is_last_stack=True, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), age_data=age_data)
-                age_dict = {age: [i, j] for j, age in enumerate(range(min_age, max_age_layer + 1))}
-            stacks.append(stack)
-            age_to_stack.update(age_dict)
-        self.stacks = tuple(stacks)
-        self.__age_in_pyramid_idx = age_to_stack
-        if super().is_total_sum():
-            self.sum_stacks()
-        return
-
-    def sum_stacks(self):
-        if not super().is_total_sum():
-            error_msg = "sum_stacks() is not available when is_total_sum() is False"
+    def sum_children(self):
+        if not self.__is_total_sum:
+            error_msg = "sum_children() is not available when is_total_sum is False."
             raise NotImplementedError(error_msg)
+        if not self.has_children():
+            error_msg = f"No children can be found."
+            raise NotImplementedError(error_msg)
+
         total = 0
         male = 0
         female = 0
-        sum_total = True
-        sum_gender = True
-        for stack in self.stacks:
-            t = stack.get_total()
-            m = stack.get_male()
-            f = stack.get_female()
-            if sum_total:
+        for child in self.children:
+            t = child.get_total()
+            m = child.get_male()
+            f = child.get_female()
+            if total is not None:
                 if is_number(t):
                     total += t
                 else:
-                    sum_total = False
                     total = None
-            if sum_gender:
-                if is_number(m) and is_number(f):
+            if male is not None:
+                if is_number(m):
                     male += m
+                else:
+                    male = None
+            if female is not None:
+                if is_number(f):
                     female += f
                 else:
-                    sum_gender = False
-                    male = None
                     female = None
-            if sum_total is False and sum_gender is False:
+            if total is None and male is None and female is None:
                 break
-        if sum_gender:
-            super().update_genders(male, female, sum_senior=False)
-        elif sum_total:
-            super().update_total(total, sum_senior=False)
+        return total, male, female
+
+    def insert_via_sum_children(self, insert_parent=True):
+        if not self.__is_total_sum:
+            error_msg = "update_via_sum() is not available when is_total_sum is False"
+            raise NotImplementedError(error_msg)
+        if not self.has_children():
+            return
+
+        (total, male, female) = self.sum_children()
+        if not (male is None or female is None):
+            # total is automatically updated
+            self.insert_sexes(male, female, delete_children=False, insert_parent=insert_parent)
+        elif total is not None:
+            self.insert_total(total, delete_children=False, insert_parent=insert_parent)
+        elif male is not None:
+            self.insert_male(male, delete_children=False, insert_parent=insert_parent)
+        elif female is not None:
+            self.insert_female(female, delete_children=False, insert_parent=insert_parent)
         return
 
-    def is_age_valid(self, age: int,):
-        if not isinstance(age, int):
-            return False
-        elif not (0 <= age <= self.__max_age_layer):
-            return False
-        return True
+    def insert_parent_via_sum(self):
+        if not self.__is_total_sum:
+            error_msg = "sum_senior_pop() is not available when is_total_sum is False."
+            raise NotImplementedError(error_msg)
+        if not self.has_parent():
+            return
+
+        self.__parent.insert_via_sum_children()
+        return
 
 
-class Stack(Population):
-    def __init__(self, pyramid=None, min_age=0, max_age=100, is_last_stack=True, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
+class Pyramid(Population):
+    def __init__(self, first_stack_height=5, mid_stack_height=5, num_stacks=17, last_age=100,
+                 is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None, stack_data=None):
         super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
-        # declare class variables and insert values
-        if isinstance(pyramid, Pyramid) or pyramid is None:
-            self.__pyramid = pyramid
-        else:
-            error_msg = f"pyramid '{pyramid}' should be a Pyramid or None."
-            raise ValueError(error_msg)
-        if isinstance(min_age, int):
-            self.__min_age = min_age
-        else:
-            error_msg = f"min_age '{min_age}' should be an integer."
-            raise ValueError(error_msg)
-        if isinstance(max_age, int):
-            self.__max_age = max_age
-        else:
-            error_msg = f"max_age '{max_age}' should be an integer."
-            raise ValueError(error_msg)
-        if isinstance(is_last_stack, bool):
-            self.__is_last_stack = is_last_stack
-        else:
-            error_msg = f"is_last_stack '{is_last_stack}' should be a boolean."
-            raise ValueError(error_msg)
+        self.__first_stack_height = None
+        self.__mid_stack_height = None
+        self.__num_stacks = None
+        self.__last_age = None
+        self.__insert_stack_variables(first_stack_height=first_stack_height, mid_stack_height=mid_stack_height, num_stacks=num_stacks, last_age=last_age)
         # declare class variables and insert values with class methods
-        self.age_layers = None
-        self.build_age_layers(age_data=age_data)
+        self.__stacks_idx = None
+        self.__age_layers_idx = None
+        self.build_stacks(age_data=age_data, stack_data=stack_data)
         return
 
     def __repr__(self):
-        min_len = 7
-        age_str = f'{self.__min_age:>2}'
-        if self.__is_last_stack:
-            age_str += '+  '
+        total = super().get_total()
+        male = super().get_male()
+        female = super().get_female()
+
+        if all(isinstance(value, int) for value in [total, male, female]):
+            total_str = int_to_str(total, min_print_len)
+            male_str = int_to_str(male, min_print_len)
+            female_str = int_to_str(female, min_print_len)
+        elif is_number(total) and is_number(male) and is_number(female):
+            if all(abs(value) <= 1 for value in [total, male, female]):
+                total_str = f'{total:8.4%}'
+                male_str = f'{male:8.4%}'
+                female_str = f'{female:8.4%}'
+            else:
+                total_str = f'{total:12,.2f}'
+                male_str = f'{male:12,.2f}'
+                female_str = f'{female:12,.2f}'
         else:
-            age_str += f'-{self.__max_age:>2}'
-        return f'{age_str}:  [ Total: {int_to_str(super().get_total(), min_len)},    M: {int_to_str(super().get_male(), min_len)},    F: {int_to_str(super().get_female(), min_len)} ]'
+            total_str = str(total)
+            male_str = str(male)
+            female_str = str(female)
 
-    def __getitem__(self, age_idx: int):
-        return self.age_layers[age_idx]
+        return f'[ Total: {total_str},    M: {male_str},    F: {female_str} ]'
 
-    def get_pyramid(self):
-        return self.__pyramid
+    def __getitem__(self, idx):
+        if isinstance(idx, int):
+            (stack_idx, age_idx) = self.__age_layers_idx[idx]
+            output = self.children[stack_idx].children[age_idx]
+        elif idx in self.__stacks_idx.keys():
+            stack_idx = self.__stacks_idx[idx]
+            output = self.children[stack_idx]
+        else:
+            error_msg = f"Unavailable attribute index '{idx}'."
+            raise AttributeError(error_msg)
+        return output
 
-    def build_age_layers(self, min_age=None, max_age=None, is_last_stack=None, age_data=None):
-        # default inputs
-        if min_age is None:
-            min_age = self.__min_age
-        if max_age is None:
-            max_age = self.__max_age
-        if is_last_stack is None:
-            is_last_stack = self.__is_last_stack
+    def __insert_stack_variables(self, first_stack_height=None, mid_stack_height=None, num_stacks=None, last_age=None):
+        # check new input or load existing input: first_stack_height
+        if first_stack_height is not None:
+            if not isinstance(first_stack_height, int):
+                error_msg = f"first_stack_height '{first_stack_height}' should be an integer."
+                raise ValueError(error_msg)
+            elif first_stack_height < 1:
+                error_msg = f"first_stack_height '{first_stack_height}' should be equal to or greater than 1."
+                raise ValueError(error_msg)
+        else:
+            first_stack_height = self.__first_stack_height
+        # check new input or load existing input: mid_stack_height
+        if mid_stack_height is not None:
+            if not isinstance(mid_stack_height, int):
+                error_msg = f"mid_stack_height '{mid_stack_height}' should be an integer."
+                raise ValueError(error_msg)
+            elif mid_stack_height < 1:
+                error_msg = f"mid_stack_height '{mid_stack_height}' should be equal to or greater than 1."
+                raise ValueError(error_msg)
+        else:
+            mid_stack_height = self.__mid_stack_height
+        # check new input or load existing input: num_stacks
+        if num_stacks is not None:
+            if not isinstance(num_stacks, int):
+                error_msg = f"num_stacks '{num_stacks}' should be an integer."
+                raise ValueError(error_msg)
+            elif num_stacks < 2:
+                error_msg = f"num_stacks '{num_stacks}' should be equal to or greater than 2."
+                raise ValueError(error_msg)
+        else:
+            num_stacks = self.__num_stacks
+        # check new input or load existing input: last_age
+        if last_age is not None:
+            if not isinstance(last_age, int):
+                error_msg = f"last_age '{last_age}' is not an integer."
+                raise ValueError(error_msg)
+        else:
+            last_age = self.__last_age
+        # check inputs on a collective basis
+        last_stack_start_age = first_stack_height + mid_stack_height * (num_stacks - 2)
+        if last_stack_start_age >= 100:
+            error_msg = f"last_stack_start_age '{last_stack_start_age}' should be less than 100."
+            raise ValueError(error_msg)
+        if last_age < last_stack_start_age:
+            error_msg = f"last_age '{last_age}' should be equal to or greater than last_stack_start_age '{last_stack_start_age}'."
+            raise ValueError(error_msg)
+        # insert values
+        self.__first_stack_height = first_stack_height
+        self.__mid_stack_height = mid_stack_height
+        self.__num_stacks = num_stacks
+        self.__last_age = last_age
 
-        # check and insert input: min_age
+    def build_stacks(self, first_stack_height=None, mid_stack_height=None, num_stacks=None, last_age=None, age_data=None, stack_data=None):
+        if not all(value is None for value in [first_stack_height, mid_stack_height, num_stacks, last_age]):
+            self.__insert_stack_variables(first_stack_height=first_stack_height, mid_stack_height=mid_stack_height, num_stacks=num_stacks, last_age=last_age)
+        # build stacks one by one
+        stacks = []
+        stack_to_idx = {}
+        age_to_idx = {}
+        stack_start_age = 0
+        for i in range(self.__num_stacks):
+            if i == (self.__num_stacks - 1):
+                # last stack
+                stack_end_age = self.__last_age
+                is_last_stack = True
+                stack_key = f"{stack_start_age:0>2}+"
+            else:
+                if i == 0:
+                    # first stack
+                    stack_end_age = stack_start_age + self.__first_stack_height - 1
+                else:
+                    # mid stack
+                    stack_end_age = stack_start_age + self.__mid_stack_height - 1
+                is_last_stack = False
+                stack_key = f"{stack_start_age:0>2}{stack_end_age:0>2}"
+
+            if stack_data is not None:
+                if stack_key in stack_data.keys():
+                    (total, male, female) = get_pop_data_from_dict(stack_data[stack_key])
+                else:
+                    total = None
+                    male = None
+                    female = None
+            else:
+                total = None
+                male = None
+                female = None
+
+            stack = Stack(parent=self, min_age=stack_start_age, max_age=stack_end_age, is_last_stack=is_last_stack, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(),
+                          total=total, male=male, female=female, age_data=age_data)
+            stacks.append(stack)
+            age_dict = {age: [i, j] for j, age in enumerate(range(stack_start_age, stack_end_age + 1))}
+            stack_to_idx.update({stack_key: i})
+            age_to_idx.update(age_dict)
+            # pass variable to next loop
+            stack_start_age = stack_end_age + 1
+        self.children = tuple(stacks)
+        self.__stacks_idx = stack_to_idx
+        self.__age_layers_idx = age_to_idx
+
+        if super().is_total_sum():
+            super().insert_via_sum_children(insert_parent=False)
+        return
+
+    def get_first_stack_height(self):
+        return self.__first_stack_height
+
+    def get_mid_stack_height(self):
+        return self.__mid_stack_height
+
+    def get_num_stacks(self):
+        return self.__num_stacks
+
+    def get_last_age(self):
+        return self.__last_age
+
+    def get_stack_in_pyramid_idx(self):
+        return self.__stacks_idx
+
+    def fill_zeros(self):
+        if not super().is_total_sum():
+            error_msg = "fill_zeros() is not available when is_total_sum is False."
+            raise NotImplementedError(error_msg)
+
+        for age in range(self.__last_age + 1):
+            self[age].insert(total=0, male=0, female=0, insert_parent=False)
+        for child in self.children:
+            child.insert_via_sum_children(insert_parent=False)
+        self.insert_via_sum_children()
+
+    def add_one_year(self):
+        if not super().is_total_sum():
+            error_msg = "add_one_year() is not available when is_total_sum is False."
+            raise NotImplementedError(error_msg)
+
+        for age in range(self.__last_age, 0, -1):
+            if age == self.__last_age:
+                total = self[age].get_total() + self[age-1].get_total()
+                male = self[age].get_male() + self[age-1].get_male()
+                female = self[age].get_female() + self[age-1].get_female()
+            else:
+                total = self[age-1].get_total()
+                male = self[age-1].get_male()
+                female = self[age-1].get_female()
+            self[age].insert(total=total, male=male, female=female, insert_parent=False)
+        self[0].insert(total=0, male=0, female=0, insert_parent=False)
+        for child in self.children:
+            child.insert_via_sum_children(insert_parent=False)
+        self.insert_via_sum_children()
+
+    def add_pyramid(self, pyramid):
+        if not super().is_total_sum():
+            error_msg = "add_pyramid() is not available when is_total_sum is False."
+            raise NotImplementedError(error_msg)
+
+        if self.__last_age == pyramid.get_last_age():
+            for age in range(self.__last_age + 1):
+                total = self[age].get_total() + pyramid[age].get_total()
+                male = self[age].get_male() + pyramid[age].get_male()
+                female = self[age].get_female() + pyramid[age].get_female()
+                if not (male is None or female is None):
+                    self[age].insert_sexes(male, female, insert_parent=False)
+                else:
+                    self[age].insert_total(total, insert_parent=False)
+            for child in self.children:
+                child.insert_via_sum_children(insert_parent=False)
+            self.insert_via_sum_children()
+        elif (self.__first_stack_height == pyramid.get_first_stack_height()) and (self.__mid_stack_height == pyramid.get_mid_stack_height()) and (self.__num_stacks == pyramid.get_num_stacks()):
+            for value in self.__stacks_idx.values():
+                total = self.children[value].get_total() + pyramid.children[value].get_total()
+                male = self.children[value].get_male() + pyramid.children[value].get_male()
+                female = self.children[value].get_female() + pyramid.children[value].get_female()
+                if not (male is None or female is None):
+                    self.children[value].insert_sexes(male, female, insert_parent=False)
+                else:
+                    self.children[value].insert_total(total, insert_parent=False)
+            self.insert_via_sum_children()
+        else:
+            total = self.get_total() + pyramid.get_total()
+            male = self.get_male() + pyramid.get_male()
+            female = self.get_female() + pyramid.get_female()
+            if not (male is None or female is None):
+                self.insert_sexes(male, female)
+            else:
+                self.insert_total(total)
+        return
+
+    def subtract_pyramid(self, pyramid):
+        if not super().is_total_sum():
+            error_msg = "subtract_pyramid() is not available when is_total_sum is False."
+            raise NotImplementedError(error_msg)
+
+        if self.__last_age == pyramid.get_last_age():
+            for age in range(self.__last_age + 1):
+                total = self[age].get_total() - pyramid[age].get_total()
+                male = self[age].get_male() - pyramid[age].get_male()
+                female = self[age].get_female() - pyramid[age].get_female()
+                if not (male is None or female is None):
+                    self[age].insert_sexes(male, female, insert_parent=False)
+                else:
+                    self[age].insert_total(total, insert_parent=False)
+            for child in self.children:
+                child.insert_via_sum_children(insert_parent=False)
+            self.insert_via_sum_children()
+        elif (self.__first_stack_height == pyramid.get_first_stack_height()) \
+                and (self.__mid_stack_height == pyramid.get_mid_stack_height()) \
+                and (self.__num_stacks == pyramid.get_num_stacks()):
+            for value in self.__stacks_idx.values():
+                total = self.children[value].get_total() - pyramid.children[value].get_total()
+                male = self.children[value].get_male() - pyramid.children[value].get_male()
+                female = self.children[value].get_female() - pyramid.children[value].get_female()
+                if not (male is None or female is None):
+                    self.children[value].insert_sexes(male, female, insert_parent=False)
+                else:
+                    self.children[value].insert_total(total, insert_parent=False)
+            self.insert_via_sum_children()
+        else:
+            total = self.get_total() - pyramid.get_total()
+            male = self.get_male() - pyramid.get_male()
+            female = self.get_female() - pyramid.get_female()
+            if not (male is None or female is None):
+                self.insert_sexes(male, female)
+            else:
+                self.insert_total(total)
+        return
+
+    def fill_age_layers(self):
+        for stack in self.children:
+            total = stack.get_total()
+            male = stack.get_male()
+            female = stack.get_female()
+            male_ratio = male / total
+            female_ratio = female / total
+            for age_layer in stack.children:
+                t = age_layer.get_total()
+                age_layer.insert_sexes(t * male_ratio, t * female_ratio, insert_parent=False)
+            stack.insert_via_sum_children(insert_parent=False)
+        self.insert_via_sum_children()
+        return
+
+    def calc_rate(self, delta_pyramid, age_lim=89):
+        total = delta_pyramid.get_total() / self.get_total()
+        male = delta_pyramid.get_male() / self.get_male()
+        female = delta_pyramid.get_female() / self.get_female()
+
+        if (self.__first_stack_height == delta_pyramid.get_first_stack_height()) \
+                and (self.__mid_stack_height == delta_pyramid.get_mid_stack_height()) \
+                and (self.__num_stacks == delta_pyramid.get_num_stacks()):
+            stack_data = {}
+            for key, value in self.__stacks_idx.items():
+                t = delta_pyramid.children[value].get_total() / self.children[value].get_total()
+                m = delta_pyramid.children[value].get_male() / self.children[value].get_male()
+                f = delta_pyramid.children[value].get_female() / self.children[value].get_female()
+                stack_data[key] = {'total': t, 'male': m, 'female': f}
+        else:
+            stack_data = None
+
+        if self.__last_age == delta_pyramid.get_last_age():
+            age_data = {}
+            for age in range(min(age_lim, self.__last_age) + 1):
+                t = delta_pyramid[age].get_total() / self[age].get_total()
+                m = delta_pyramid[age].get_male() / self[age].get_male()
+                f = delta_pyramid[age].get_female() / self[age].get_female()
+                age_data[age] = {'total': t, 'male': m, 'female': f}
+
+            max_age = self.__last_age
+            while age_lim < max_age:
+                min_age = max(age_lim + 1, max_age - 3)
+                t_delta = 0
+                t_self = 0
+                m_delta = 0
+                m_self = 0
+                f_delta = 0
+                f_self = 0
+                for age in range(min_age, max_age + 1):
+                    t_delta += delta_pyramid[age].get_total()
+                    t_self += self[age].get_total()
+                    m_delta += delta_pyramid[age].get_male()
+                    m_self += self[age].get_male()
+                    f_delta += delta_pyramid[age].get_female()
+                    f_self += self[age].get_female()
+                t = t_delta / t_self
+                m = m_delta / m_self
+                f = f_delta / f_self
+                for age in range(min_age, max_age + 1):
+                    age_data[age] = {'total': t, 'male': m, 'female': f}
+                # pass to next loop
+                max_age = min_age - 1
+        else:
+            age_data = None
+
+        rate_pyramid = Pyramid(first_stack_height=self.__first_stack_height, mid_stack_height=self.__mid_stack_height, num_stacks=self.__num_stacks, last_age=self.__last_age,
+                               is_total_sum=False, is_pos_only=True, total=total, male=male, female=female, age_data=age_data, stack_data=stack_data)
+
+        return rate_pyramid
+
+
+class Stack(Population):
+    def __init__(self, parent=None, min_age=0, max_age=100, is_last_stack=True, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None, age_data=None):
+        super().__init__(parent=parent, is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
+        # check the input and declare a class variable with value: min_age
         if not isinstance(min_age, int):
-            error_msg = f"min_age '{min_age}' is not an integer."
+            error_msg = f"min_age '{min_age}' should be an integer."
             raise ValueError(error_msg)
         elif min_age < 0:
             error_msg = f"min_age '{min_age}' should be equal to or greater than 0."
             raise ValueError(error_msg)
         self.__min_age = min_age
-        # check and insert input: max_age
+        # check the input and declare a class variable with value: max_age
         if not isinstance(max_age, int):
-            error_msg = f"max_age '{max_age}' is not an integer."
+            error_msg = f"max_age '{max_age}' should be an integer."
             raise ValueError(error_msg)
         elif max_age < min_age:
             error_msg = f"max_age '{max_age}' should be equal to or greater than min_age '{min_age}'."
             raise ValueError(error_msg)
         self.__max_age = max_age
-        # check and insert input: is_last_stack
+        # check the input and declare a class variable with value: is_last_stack
         if not isinstance(is_last_stack, bool):
-            error_msg = f"is_last_stack '{is_last_stack}' is not a boolean."
+            error_msg = f"is_last_stack '{is_last_stack}' should be a boolean."
             raise ValueError(error_msg)
         self.__is_last_stack = is_last_stack
+        # declare a class variable and insert values with class methods: age_layers
+        self.build_age_layers(age_data=age_data)
+        return
 
+    def __repr__(self):
+        if self.__is_last_stack:
+            age_str = f'{self.__min_age:>2}+  '
+        else:
+            age_str = f'{self.__min_age:>2}-{self.__max_age:>2}'
+
+        total = super().get_total()
+        male = super().get_male()
+        female = super().get_female()
+
+        if all(isinstance(value, int) for value in [total, male, female]):
+            total_str = int_to_str(total, min_print_len)
+            male_str = int_to_str(male, min_print_len)
+            female_str = int_to_str(female, min_print_len)
+        elif is_number(total) and is_number(male) and is_number(female):
+            if all(abs(value) <= 1 for value in [total, male, female]):
+                total_str = f'{total:8.4%}'
+                male_str = f'{male:8.4%}'
+                female_str = f'{female:8.4%}'
+            else:
+                total_str = f'{total:12,.2f}'
+                male_str = f'{male:12,.2f}'
+                female_str = f'{female:12,.2f}'
+        else:
+            total_str = str(total)
+            male_str = str(male)
+            female_str = str(female)
+
+        return f'{age_str}: [ Total: {total_str},    M: {male_str},    F: {female_str} ]'
+
+    def __getitem__(self, age_idx: int):
+        return self.children[age_idx]
+
+    def build_age_layers(self, age_data=None):
         # build layers one by one
-        ages = []
-        for age in range(min_age, max_age + 1):
-            if age == max_age:
-                is_last_layer = is_last_stack
+        age_layers = []
+        for age in range(self.__min_age, self.__max_age + 1):
+            if age == self.__max_age:
+                is_last_layer = self.__is_last_stack
             else:
                 is_last_layer = False
 
@@ -591,104 +826,332 @@ class Stack(Population):
                 female = None
 
             age_layer = AgeLayer(self, age, is_last_layer=is_last_layer, is_total_sum=super().is_total_sum(), is_pos_only=self.is_pos_only(), total=total, male=male, female=female)
-            ages.append(age_layer)
-        self.age_layers = tuple(ages)
+            age_layers.append(age_layer)
+
+        self.children = tuple(age_layers)
+
         if super().is_total_sum():
-            self.sum_age_layers(sum_stacks=False)
-        return
-
-    def sum_age_layers(self, sum_stacks=True):
-        if not super().is_total_sum():
-            error_msg = "sum_ages() is not available when is_total_sum() is False"
-            raise NotImplementedError(error_msg)
-        old_total = super().get_total()
-        old_male = super().get_male()
-        old_female = super().get_female()
-
-        total = 0
-        male = 0
-        female = 0
-        sum_total = True
-        sum_gender = True
-        for age in self.age_layers:
-            t = age.get_total()
-            m = age.get_male()
-            f = age.get_female()
-            if sum_total:
-                if is_number(t):
-                    total += t
-                else:
-                    sum_total = False
-                    total = None
-            if sum_gender:
-                if is_number(m) and is_number(f):
-                    male += m
-                    female += f
-                else:
-                    sum_gender = False
-                    male = None
-                    female = None
-            if sum_total is False and sum_gender is False:
-                break
-        if sum_gender:
-            super().update_genders(male, female, sum_senior=False)
-        elif sum_total:
-            super().update_total(total, sum_senior=False)
-
-        pyramid = self.get_pyramid()
-        if pyramid and super().is_total_sum() and sum_stacks:
-            new_total = super().get_total()
-            new_male = super().get_male()
-            new_female = super().get_female()
-            if (old_total != new_total) or (old_male != new_male) or (old_female != new_female):
-                pyramid.sum_stacks()
+            super().insert_via_sum_children(insert_parent=False)
         return
 
 
 class AgeLayer(Population):
-    def __init__(self, stack: Stack, age: int, is_last_layer=True, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
-        super().__init__(is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
-        # declare class variables and insert values
-        if isinstance(stack, Stack):
-            self.__stack = stack
-        else:
-            error_msg = f"stack '{stack}' should be a Stack."
-            raise ValueError(error_msg)
-        if isinstance(age, int):
-            self.__age = age
-        else:
+    def __init__(self, parent, age: int, is_last_layer=True, is_total_sum=True, is_pos_only=True, total=None, male=None, female=None):
+        super().__init__(parent=parent, is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
+        # check the input and declare a class variable with value: age
+        if not isinstance(age, int):
             error_msg = f"age '{age}' should be an integer."
             raise ValueError(error_msg)
-        if isinstance(is_last_layer, bool):
-            self.__last_age = is_last_layer
-        else:
+        elif age < 0:
+            error_msg = f"age '{age}' should be equal to or greater than 0."
+            raise ValueError(error_msg)
+        self.__age = age
+        # check the input and declare a class variable with value: is_last_layer
+        if not isinstance(is_last_layer, bool):
             error_msg = f"is_last_layer '{is_last_layer}' should be a boolean."
             raise ValueError(error_msg)
+        self.__is_last_age = is_last_layer
         return
 
     def __repr__(self):
-        min_len = 7
-        age_str = f'{self.__age:>3}'
-        if self.__last_age:
-            age_str += '+ '
+        if self.__is_last_age:
+            age_str = f'{self.__age:>3}+ '
         else:
-            age_str += '  '
-        return f'{age_str}: [ Total: {int_to_str(super().get_total(), min_len)},    M: {int_to_str(super().get_male(), min_len)},    F: {int_to_str(super().get_female(), min_len)} ]'
+            age_str = f'{self.__age:>3}  '
 
-    def get_stack(self):
-        return self.__stack
+        total = super().get_total()
+        male = super().get_male()
+        female = super().get_female()
+
+        if all(isinstance(value, int) for value in [total, male, female]):
+            total_str = int_to_str(total, min_print_len)
+            male_str = int_to_str(male, min_print_len)
+            female_str = int_to_str(female, min_print_len)
+        elif is_number(total) and is_number(male) and is_number(female):
+            if all(abs(value) <= 1 for value in [total, male, female]):
+                total_str = f'{total:8.4%}'
+                male_str = f'{male:8.4%}'
+                female_str = f'{female:8.4%}'
+            else:
+                total_str = f'{total:12,.2f}'
+                male_str = f'{male:12,.2f}'
+                female_str = f'{female:12,.2f}'
+        else:
+            total_str = str(total)
+            male_str = str(male)
+            female_str = str(female)
+
+        return f'{age_str}: [ Total: {total_str},    M: {male_str},    F: {female_str} ]'
+
+
+def calc_pyramid(pyramid_1: Pyramid, calc_type: str, pyramid_2: Pyramid, is_total_sum: bool, is_pos_only: bool):
+    first_stack_height_1 = pyramid_1.get_first_stack_height()
+    mid_stack_height_1 = pyramid_1.get_mid_stack_height()
+    num_stacks_1 = pyramid_1.get_num_stacks()
+    last_age_1 = pyramid_1.get_last_age()
+
+    first_stack_height_2 = pyramid_2.get_first_stack_height()
+    mid_stack_height_2 = pyramid_2.get_mid_stack_height()
+    num_stacks_2 = pyramid_2.get_num_stacks()
+    last_age_2 = pyramid_2.get_last_age()
+
+    if is_total_sum:
+        if last_age_1 == last_age_2:
+            age_data = {}
+            for age in range(last_age_1 + 1):
+                if calc_type == '+':
+                    t = pyramid_1[age].get_total() + pyramid_2[age].get_total()
+                    m = pyramid_1[age].get_male() + pyramid_2[age].get_male()
+                    f = pyramid_1[age].get_female() + pyramid_2[age].get_female()
+                elif calc_type == '-':
+                    t = pyramid_1[age].get_total() - pyramid_2[age].get_total()
+                    m = pyramid_1[age].get_male() - pyramid_2[age].get_male()
+                    f = pyramid_1[age].get_female() - pyramid_2[age].get_female()
+                elif calc_type == '*':
+                    t = pyramid_1[age].get_total() * pyramid_2[age].get_total()
+                    m = pyramid_1[age].get_male() * pyramid_2[age].get_male()
+                    f = pyramid_1[age].get_female() * pyramid_2[age].get_female()
+                else:
+                    error_msg = f"Unavailable calc_type '{calc_type}'."
+                    raise ValueError(error_msg)
+                age_data[age] = {'total': t, 'male': m, 'female': f}
+            pyramid_new = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                                  is_total_sum=is_total_sum, is_pos_only=is_pos_only, age_data=age_data)
+        elif (first_stack_height_1 == first_stack_height_2) and (mid_stack_height_1 == mid_stack_height_2) and (num_stacks_1 == num_stacks_2):
+            stack_data = {}
+            for key, value in pyramid_1.get_stack_in_pyramid_idx().items():
+                if calc_type == '+':
+                    t = pyramid_1.children[value].get_total() + pyramid_2.children[value].get_total()
+                    m = pyramid_1.children[value].get_male() + pyramid_2.children[value].get_male()
+                    f = pyramid_1.children[value].get_female() + pyramid_2.children[value].get_female()
+                elif calc_type == '-':
+                    t = pyramid_1.children[value].get_total() - pyramid_2.children[value].get_total()
+                    m = pyramid_1.children[value].get_male() - pyramid_2.children[value].get_male()
+                    f = pyramid_1.children[value].get_female() - pyramid_2.children[value].get_female()
+                elif calc_type == '*':
+                    t = pyramid_1.children[value].get_total() * pyramid_2.children[value].get_total()
+                    m = pyramid_1.children[value].get_male() * pyramid_2.children[value].get_male()
+                    f = pyramid_1.children[value].get_female() * pyramid_2.children[value].get_female()
+                else:
+                    error_msg = f"Unavailable calc_type '{calc_type}'."
+                    raise ValueError(error_msg)
+                stack_data[key] = {'total': t, 'male': m, 'female': f}
+            pyramid_new = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                                  is_total_sum=is_total_sum, is_pos_only=is_pos_only, stack_data=stack_data)
+        else:
+            if calc_type == '+':
+                total = pyramid_1.get_total() + pyramid_2.get_total()
+                male = pyramid_1.get_male() + pyramid_2.get_male()
+                female = pyramid_1.get_female() + pyramid_2.get_female()
+            elif calc_type == '-':
+                total = pyramid_1.get_total() - pyramid_2.get_total()
+                male = pyramid_1.get_male() - pyramid_2.get_male()
+                female = pyramid_1.get_female() - pyramid_2.get_female()
+            elif calc_type == '*':
+                total = pyramid_1.get_total() * pyramid_2.get_total()
+                male = pyramid_1.get_male() * pyramid_2.get_male()
+                female = pyramid_1.get_female() * pyramid_2.get_female()
+            else:
+                error_msg = f"Unavailable calc_type '{calc_type}'."
+                raise ValueError(error_msg)
+            pyramid_new = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                                  is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female)
+    else:
+        if calc_type == '+':
+            total = pyramid_1.get_total() + pyramid_2.get_total()
+            male = pyramid_1.get_male() + pyramid_2.get_male()
+            female = pyramid_1.get_female() + pyramid_2.get_female()
+        elif calc_type == '-':
+            total = pyramid_1.get_total() - pyramid_2.get_total()
+            male = pyramid_1.get_male() - pyramid_2.get_male()
+            female = pyramid_1.get_female() - pyramid_2.get_female()
+        elif calc_type == '*':
+            total = pyramid_1.get_total() * pyramid_2.get_total()
+            male = pyramid_1.get_male() * pyramid_2.get_male()
+            female = pyramid_1.get_female() * pyramid_2.get_female()
+        else:
+            error_msg = f"Unavailable calc_type '{calc_type}'."
+            raise ValueError(error_msg)
+
+        if (first_stack_height_1 == first_stack_height_2) and (mid_stack_height_1 == mid_stack_height_2) and (num_stacks_1 == num_stacks_2):
+            stack_data = {}
+            for key, value in pyramid_1.get_stack_in_pyramid_idx().items():
+                if calc_type == '+':
+                    t = pyramid_1.children[value].get_total() + pyramid_2.children[value].get_total()
+                    m = pyramid_1.children[value].get_male() + pyramid_2.children[value].get_male()
+                    f = pyramid_1.children[value].get_female() + pyramid_2.children[value].get_female()
+                elif calc_type == '-':
+                    t = pyramid_1.children[value].get_total() - pyramid_2.children[value].get_total()
+                    m = pyramid_1.children[value].get_male() - pyramid_2.children[value].get_male()
+                    f = pyramid_1.children[value].get_female() - pyramid_2.children[value].get_female()
+                elif calc_type == '*':
+                    t = pyramid_1.children[value].get_total() * pyramid_2.children[value].get_total()
+                    m = pyramid_1.children[value].get_male() * pyramid_2.children[value].get_male()
+                    f = pyramid_1.children[value].get_female() * pyramid_2.children[value].get_female()
+                else:
+                    error_msg = f"Unavailable calc_type '{calc_type}'."
+                    raise ValueError(error_msg)
+                stack_data[key] = {'total': t, 'male': m, 'female': f}
+        else:
+            stack_data = None
+
+        if last_age_1 == last_age_2:
+            age_data = {}
+            for age in range(last_age_1 + 1):
+                if calc_type == '+':
+                    t = pyramid_1[age].get_total() + pyramid_2[age].get_total()
+                    m = pyramid_1[age].get_male() + pyramid_2[age].get_male()
+                    f = pyramid_1[age].get_female() + pyramid_2[age].get_female()
+                elif calc_type == '-':
+                    t = pyramid_1[age].get_total() - pyramid_2[age].get_total()
+                    m = pyramid_1[age].get_male() - pyramid_2[age].get_male()
+                    f = pyramid_1[age].get_female() - pyramid_2[age].get_female()
+                elif calc_type == '*':
+                    t = pyramid_1[age].get_total() * pyramid_2[age].get_total()
+                    m = pyramid_1[age].get_male() * pyramid_2[age].get_male()
+                    f = pyramid_1[age].get_female() * pyramid_2[age].get_female()
+                else:
+                    error_msg = f"Unavailable calc_type '{calc_type}'."
+                    raise ValueError(error_msg)
+                age_data[age] = {'total': t, 'male': m, 'female': f}
+        else:
+            age_data = None
+
+        pyramid_new = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                              is_total_sum=is_total_sum, is_pos_only=is_pos_only, total=total, male=male, female=female, age_data=age_data, stack_data=stack_data)
+
+    return pyramid_new
+
+
+def avg_pyramids(pyramid_1: Pyramid, pyramid_2: Pyramid):
+    first_stack_height_1 = pyramid_1.get_first_stack_height()
+    mid_stack_height_1 = pyramid_1.get_mid_stack_height()
+    num_stacks_1 = pyramid_1.get_num_stacks()
+    last_age_1 = pyramid_1.get_last_age()
+    is_total_sum_1 = pyramid_1.is_total_sum()
+    is_pos_only_1 = pyramid_1.is_pos_only()
+
+    first_stack_height_2 = pyramid_2.get_first_stack_height()
+    mid_stack_height_2 = pyramid_2.get_mid_stack_height()
+    num_stacks_2 = pyramid_2.get_num_stacks()
+    last_age_2 = pyramid_2.get_last_age()
+    is_total_sum_2 = pyramid_2.is_total_sum()
+    is_pos_only_2 = pyramid_2.is_pos_only()
+    
+    if is_total_sum_1 != is_total_sum_2:
+        error_msg = f"two pyramids have different is_total_sum: '{is_total_sum_1}' vs '{is_total_sum_2}'."
+        raise ValueError(error_msg)
+    if is_pos_only_1 != is_pos_only_2:
+        error_msg = f"two pyramids have different is_pos_only: '{is_pos_only_1}' vs '{is_pos_only_2}'."
+        raise ValueError(error_msg)
+
+    if is_total_sum_1:
+        if last_age_1 == last_age_2:
+            age_data = {}
+            for age in range(last_age_1 + 1):
+                t = (pyramid_1[age].get_total() + pyramid_2[age].get_total()) / 2
+                m = (pyramid_1[age].get_male() + pyramid_2[age].get_male()) / 2
+                f = (pyramid_1[age].get_female() + pyramid_2[age].get_female()) / 2
+                age_data[age] = {'total': t, 'male': m, 'female': f}
+            pyramid_avg = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                                  is_total_sum=is_total_sum_1, is_pos_only=is_pos_only_1, age_data=age_data)
+        elif (first_stack_height_1 == first_stack_height_2) and (mid_stack_height_1 == mid_stack_height_2) and (num_stacks_1 == num_stacks_2):
+            stack_data = {}
+            for key, value in pyramid_1.get_stack_in_pyramid_idx().items():
+                t = (pyramid_1.children[value].get_total() + pyramid_2.children[value].get_total()) / 2
+                m = (pyramid_1.children[value].get_male() + pyramid_2.children[value].get_male()) / 2
+                f = (pyramid_1.children[value].get_female() + pyramid_2.children[value].get_female()) / 2
+                stack_data[key] = {'total': t, 'male': m, 'female': f}
+            pyramid_avg = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                                  is_total_sum=is_total_sum_1, is_pos_only=is_pos_only_1, stack_data=stack_data)
+        else:
+            total = (pyramid_1.get_total() + pyramid_2.get_total()) / 2
+            male = (pyramid_1.get_male() + pyramid_2.get_male()) / 2
+            female = (pyramid_1.get_female() + pyramid_2.get_female()) / 2
+            pyramid_avg = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                                  is_total_sum=is_total_sum_1, is_pos_only=is_pos_only_1, total=total, male=male, female=female)
+    else:
+        total = (pyramid_1.get_total() + pyramid_2.get_total()) / 2
+        male = (pyramid_1.get_male() + pyramid_2.get_male()) / 2
+        female = (pyramid_1.get_female() + pyramid_2.get_female()) / 2
+
+        if (first_stack_height_1 == first_stack_height_2) and (mid_stack_height_1 == mid_stack_height_2) and (num_stacks_1 == num_stacks_2):
+            stack_data = {}
+            for key, value in pyramid_1.get_stack_in_pyramid_idx().items():
+                t = (pyramid_1.children[value].get_total() + pyramid_2.children[value].get_total()) / 2
+                m = (pyramid_1.children[value].get_male() + pyramid_2.children[value].get_male()) / 2
+                f = (pyramid_1.children[value].get_female() + pyramid_2.children[value].get_female()) / 2
+                stack_data[key] = {'total': t, 'male': m, 'female': f}
+        else:
+            stack_data = None
+
+        if last_age_1 == last_age_2:
+            age_data = {}
+            for age in range(last_age_1 + 1):
+                t = (pyramid_1[age].get_total() + pyramid_2[age].get_total()) / 2
+                m = (pyramid_1[age].get_male() + pyramid_2[age].get_male()) / 2
+                f = (pyramid_1[age].get_female() + pyramid_2[age].get_female()) / 2
+                age_data[age] = {'total': t, 'male': m, 'female': f}
+        else:
+            age_data = None
+
+        pyramid_avg = Pyramid(first_stack_height=first_stack_height_1, mid_stack_height=mid_stack_height_1, num_stacks=num_stacks_1, last_age=last_age_1,
+                              is_total_sum=is_total_sum_1, is_pos_only=is_pos_only_1, total=total, male=male, female=female, age_data=age_data, stack_data=stack_data)
+
+    return pyramid_avg
+
+
+def convert_sex_type_to_key(sex_type: str):
+    if sex_type == '-':
+        sex_key = 'total'
+    elif sex_type == 'M':
+        sex_key = 'male'
+    elif sex_type == 'F':
+        sex_key = 'female'
+    else:
+        error_msg = f"sex_type '{sex_type}' is invalid."
+        raise ValueError(error_msg)
+
+    return sex_key
+
+
+def convert_age_type_to_stack_key(age_type: str):
+    if age_type.isnumeric():
+        stack_key = age_type
+    elif age_type[0] == '<':
+        max_age = int(age_type[1:]) - 1
+        stack_key = f'00{max_age:0>2}'
+    elif age_type[0] == '+':
+        stack_key = f'{age_type[2:]}+'
+    else:
+        error_msg = f"Unavailable age_type '{age_type}'."
+        raise ValueError(error_msg)
+
+    return stack_key
+
+
+def change_population_keys(pop_data: dict):
+    pop_data['total'] = pop_data['-']
+    pop_data['male'] = pop_data['M']
+    pop_data['female'] = pop_data['F']
+
+    del pop_data['-']
+    del pop_data['M']
+    del pop_data['F']
+
+    return
 
 
 def get_pop_data_from_dict(pop_data: dict):
     total = None
     male = None
     female = None
-    if 'T' in pop_data.keys():
-        total = pop_data['T']
-    if 'M' in pop_data.keys():
-        male = pop_data['M']
-    if 'F' in pop_data.keys():
-        female = pop_data['F']
+    if 'total' in pop_data.keys():
+        total = pop_data['total']
+    if 'male' in pop_data.keys():
+        male = pop_data['male']
+    if 'female' in pop_data.keys():
+        female = pop_data['female']
     return total, male, female
 
 
@@ -703,8 +1166,11 @@ def int_to_str(input_int: int, min_len=0):
 
 def str_to_int(input_str: str):
     if isinstance(input_str, str):
-        output_str = input_str.replace(',', '')
-        output_int = int(output_str)
+        if input_str == '-':
+            output_int = None
+        else:
+            output_str = input_str.replace(',', '')
+            output_int = int(output_str)
     elif isinstance(input_str, int):
         output_int = input_str
     elif input_str is None or isna(input_str):
