@@ -1,3 +1,6 @@
+import pandas as pd
+import plotly.graph_objects as gp
+
 from pandas import isna
 from copy import deepcopy
 
@@ -1246,6 +1249,41 @@ def get_pop_data_from_dict(pop_data: dict):
     if 'female' in pop_data.keys():
         female = pop_data['female']
     return total, male, female
+
+
+def pyramid_to_dataframe(pyramid: Pyramid):
+    male = []
+    female = []
+    last_age = pyramid.get_last_age()
+    for age in range(last_age + 1):
+        male.append(pyramid[age].get_male())
+        female.append(pyramid[age].get_female())
+    idx = list(range(last_age))
+    idx.append(f"{last_age}+")
+    df = pd.DataFrame(data={'M': male, 'F': female}, index=idx)
+
+    return df
+
+
+def plot_pyramid(pyramid: Pyramid):
+    df = pyramid_to_dataframe(pyramid)
+    y_age = df.index
+    x_M = df['M'] * -1
+    x_F = df['F']
+
+    fig = gp.Figure()
+    fig.add_trace(gp.Bar(y=y_age, x=x_M, name='Male', orientation='h'))
+    fig.add_trace(gp.Bar(y=y_age, x=x_F, name='Female', orientation='h'))
+
+    fig.update_layout(barmode = 'relative', bargap=0.0, bargroupgap=0,
+                      xaxis=dict(tickvals=[-500000, -400000, -300000, -200000, -100000,
+                                           0, 100000, 200000, 300000, 400000, 500000],
+                                 ticktext=['50만', '40만', '30만', '20만', '10만',
+                                           '0', '10만', '20만', '30만', '40만', '50만'],
+                                 title_font_size=14)
+                      )
+    fig.show(renderer='browser')
+    return
 
 
 def int_to_str(input_int: int, min_len=0):

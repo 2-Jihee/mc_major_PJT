@@ -1,3 +1,5 @@
+import pandas as pd
+
 from pop.load import *
 
 admin_div_codes = ['00', '11', '26', '27', '28', '29', '30', '31', '36', '41', '42', '43', '44', '45', '46', '47', '48', '50']
@@ -120,7 +122,7 @@ for admin_div_code in admin_div_codes:
         eoy_pyramids[admin_div_code][year] = temp_eoy_pyramid
 
 # # future assumptions
-future_year = 2050
+future_year = 2060
 for from_admin_div_code in admin_div_codes:
     if from_admin_div_code == '00':
         continue
